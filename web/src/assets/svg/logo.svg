@@ -1,12 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <!-- Clipboard body -->
-  <rect x="45" y="40" width="110" height="140" rx="12" stroke="currentColor" stroke-width="8" fill="none"/>
-  <!-- Clipboard clip -->
-  <rect x="72" y="28" width="56" height="24" rx="8" stroke="currentColor" stroke-width="8" fill="none"/>
-  <!-- Routing arrow: horizontal line with turn -->
-  <path d="M72 95 L115 95 L115 130" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <!-- Arrowhead -->
-  <polyline points="100,118 115,138 130,118" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <!-- Dot at start of route -->
-  <circle cx="72" cy="95" r="6" fill="currentColor"/>
+  <!-- Black Horse (黑马) inspired dispatch logo -->
+  <!-- Horse head silhouette - bold, dynamic -->
+  <path d="M60 160 C60 160, 55 120, 65 95 C72 78, 78 68, 82 55 C85 46, 92 35, 100 30 C108 25, 118 28, 120 35 C122 42, 118 48, 115 52 L118 50 C122 46, 130 42, 135 45 C140 48, 138 55, 135 60 C132 65, 125 72, 120 78 C115 84, 112 92, 110 100 C108 108, 108 118, 110 128 C112 138, 118 148, 125 155 L140 160"
+    stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Mane flowing -->
+  <path d="M82 55 C78 60, 72 68, 68 78" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M90 42 C85 50, 78 60, 72 72" stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <!-- Eye -->
+  <circle cx="108" cy="52" r="4" fill="currentColor"/>
+  <!-- Speed lines (dispatch / motion) -->
+  <line x1="40" y1="100" x2="55" y2="100" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+  <line x1="35" y1="115" x2="55" y2="115" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+  <line x1="42" y1="130" x2="58" y2="130" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
+  <!-- Ground line -->
+  <line x1="50" y1="170" x2="150" y2="170" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
 </svg>

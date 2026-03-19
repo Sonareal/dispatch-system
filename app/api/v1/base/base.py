@@ -42,7 +42,30 @@ async def get_userinfo():
     user_id = CTX_USER_ID.get()
     user_obj = await user_controller.get(id=user_id)
     data = await user_obj.to_dict(exclude_fields=["password"])
-    data["avatar"] = "https://avatars.githubusercontent.com/u/54677442?v=4"
+    # Generate avatar based on user's role
+    roles = await user_obj.roles.all()
+    role_codes = [r.code for r in roles]
+    # Use role-based avatar colors
+    if "super_admin" in role_codes or user_obj.is_superuser:
+        avatar_color = "c62828"  # dark red
+        avatar_icon = "SA"
+    elif "admin" in role_codes:
+        avatar_color = "1565c0"  # dark blue
+        avatar_icon = "AD"
+    elif "reviewer" in role_codes:
+        avatar_color = "6a1b9a"  # purple
+        avatar_icon = "RV"
+    elif "region_rep" in role_codes:
+        avatar_color = "2e7d32"  # green
+        avatar_icon = "RP"
+    elif "front_staff" in role_codes:
+        avatar_color = "e65100"  # orange
+        avatar_icon = "FS"
+    else:
+        avatar_color = "455a64"  # gray
+        avatar_icon = "U"
+    display_name = (user_obj.alias or user_obj.username or "U")[:2].upper()
+    data["avatar"] = f"https://ui-avatars.com/api/?name={display_name}&background={avatar_color}&color=fff&size=128&bold=true&font-size=0.4"
     return Success(data=data)
 
 

@@ -27,7 +27,7 @@ const options = computed(() => {
 
 const handleChangeLocale = (value) => {
   store.setLocale(value)
-  // reload page
-  router.go()
+  // Full page reload to apply all translations including dynamic menus
+  window.location.reload()
 }
 </script>
