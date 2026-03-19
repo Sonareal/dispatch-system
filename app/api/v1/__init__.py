@@ -31,3 +31,13 @@ v1_router.include_router(tickets_router, prefix="/ticket", dependencies=[DependA
 v1_router.include_router(messages_router, prefix="/message", dependencies=[DependAuth])
 v1_router.include_router(oplog_router, prefix="/oplog", dependencies=[DependPermission])
 v1_router.include_router(sysconfig_router, prefix="/sysconfig", dependencies=[DependPermission])
+
+# Public site config endpoint (no auth required, for login page etc.)
+from app.models.admin import SystemConfig as _SC
+from app.schemas.base import Success as _Suc
+
+@v1_router.get("/site/config", summary="获取站点配置（公开）", tags=["公开接口"])
+async def _get_site_config():
+    objs = await _SC.filter(group="site").all()
+    data = {obj.key: obj.value for obj in objs}
+    return _Suc(data=data)

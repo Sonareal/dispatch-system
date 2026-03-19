@@ -6,7 +6,7 @@
   <div ml-auto flex items-center>
     <Languages />
     <ThemeMode />
-    <GithubSite />
+    <!-- GithubSite removed for commercial use -->
     <FullScreen />
     <UserAvatar />
   </div>

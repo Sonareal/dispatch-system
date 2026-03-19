@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Body, Query
+import os
+
+from fastapi import APIRouter, Body, File, Query, UploadFile
 from tortoise.expressions import Q
 
 from app.models.admin import SystemConfig
 from app.schemas.base import Success, SuccessExtra
+from app.settings.config import settings
 
 router = APIRouter()
 
@@ -58,3 +61,41 @@ async def set_config(
 async def delete_config(key: str = Query(..., description="配置键")):
     await SystemConfig.filter(key=key).delete()
     return Success(msg="删除成功")
+
+
+@router.post("/upload_image", summary="上传站点图片(logo/背景)")
+async def upload_site_image(
+    config_key: str = Body(..., description="配置键，如 site_logo, login_bg"),
+    file: UploadFile = File(...),
+):
+    upload_dir = os.path.join(settings.UPLOAD_DIR, "site")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    ext = os.path.splitext(file.filename)[1] if file.filename else ".png"
+    filename = f"{config_key}{ext}"
+    filepath = os.path.join(upload_dir, filename)
+
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    file_url = f"/uploads/site/{filename}"
+
+    # Save to config
+    obj, created = await SystemConfig.get_or_create(
+        key=config_key,
+        defaults={"value": file_url, "desc": f"站点图片: {config_key}", "group": "site"},
+    )
+    if not created:
+        obj.value = file_url
+        await obj.save()
+
+    return Success(msg="上传成功", data={"url": file_url})
+
+
+@router.get("/site", summary="获取站点配置（公开，无需登录）")
+async def get_site_config():
+    """返回所有 site 分组的配置，用于登录页等公开场景"""
+    objs = await SystemConfig.filter(group="site").all()
+    data = {obj.key: obj.value for obj in objs}
+    return Success(data=data)

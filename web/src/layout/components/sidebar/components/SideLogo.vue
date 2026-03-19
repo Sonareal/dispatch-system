@@ -11,14 +11,12 @@
       font-bold
       color-primary
     >
-      {{ title }}
+      {{ $t('app_name') }}
     </h2>
   </router-link>
 </template>
 
 <script setup>
 import { useAppStore } from '@/store'
-const title = import.meta.env.VITE_TITLE
-
 const appStore = useAppStore()
 </script>

@@ -3,6 +3,7 @@ import { request } from '@/utils'
 export default {
   // === Auth & Base ===
   login: (data) => request.post('/base/access_token', data, { noNeedToken: true }),
+  getSiteConfig: () => request.get('/site/config', { noNeedToken: true }),
   getUserInfo: () => request.get('/base/userinfo'),
   getUserMenu: () => request.get('/base/usermenu'),
   getUserApi: () => request.get('/base/userapi'),
