@@ -15,6 +15,44 @@
 <script setup>
 import { usePermissionStore, useAppStore } from '@/store'
 import { renderCustomIcon, renderIcon, isExternal } from '@/utils'
+import { useI18n } from 'vue-i18n'
+
+const { t, locale } = useI18n({ useScope: 'global' })
+
+// Menu name i18n mapping (Chinese -> i18n key)
+const menuNameMap = {
+  '工单管理': 'menu.ticket',
+  '工单列表': 'menu.ticket_list',
+  '待审核': 'menu.pending_review',
+  '我的工单': 'menu.my_tickets',
+  '我负责的': 'menu.my_assigned',
+  '沟通管理': 'menu.communication',
+  '消息记录': 'menu.messages',
+  '语音记录': 'menu.voice_records',
+  '通话记录': 'menu.call_records',
+  '区域管理': 'menu.area',
+  '城市管理': 'menu.city',
+  '行政区管理': 'menu.region',
+  '系统管理': 'menu.system',
+  '用户管理': 'menu.user',
+  '角色管理': 'menu.role',
+  '菜单管理': 'menu.menu',
+  'API管理': 'menu.api',
+  '部门管理': 'menu.dept',
+  '审计日志': 'menu.audit_log',
+  '操作日志': 'menu.op_log',
+  '系统配置': 'menu.sys_config',
+}
+
+function translateMenuName(name) {
+  if (locale.value === 'cn') return name
+  const key = menuNameMap[name]
+  if (key) {
+    const translated = t(key)
+    if (translated !== key) return translated
+  }
+  return name
+}
 
 const router = useRouter()
 const curRoute = useRoute()
@@ -46,7 +84,7 @@ function resolvePath(basePath, path) {
 
 function getMenuItem(route, basePath = '') {
   let menuItem = {
-    label: (route.meta && route.meta.title) || route.name,
+    label: translateMenuName((route.meta && route.meta.title) || route.name),
     key: route.name,
     path: resolvePath(basePath, route.path),
     icon: getIcon(route.meta),
@@ -64,7 +102,7 @@ function getMenuItem(route, basePath = '') {
     const singleRoute = visibleChildren[0]
     menuItem = {
       ...menuItem,
-      label: singleRoute.meta?.title || singleRoute.name,
+      label: translateMenuName(singleRoute.meta?.title || singleRoute.name),
       key: singleRoute.name,
       path: resolvePath(menuItem.path, singleRoute.path),
       icon: getIcon(singleRoute.meta),

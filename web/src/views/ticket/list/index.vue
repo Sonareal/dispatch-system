@@ -1,5 +1,6 @@
 <script setup>
-import { h, onMounted, ref, watch } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NButton, NForm, NFormItem, NInput, NInputNumber, NSelect, NTag, NSpace,
   NModal, NDescriptions, NDescriptionsItem, NTimeline, NTimelineItem,
@@ -15,6 +16,7 @@ import { useUserStore } from '@/store'
 import api from '@/api'
 import TheIcon from '@/components/icon/TheIcon.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const userStore = useUserStore()
 
 defineOptions({ name: '工单列表' })
@@ -22,14 +24,19 @@ defineOptions({ name: '工单列表' })
 const $table = ref(null)
 const queryItems = ref({})
 
-const statusOptions = [
-  { label: '全部', value: '' }, { label: '草稿', value: 'draft' },
-  { label: '待审核', value: 'pending_review' },
-  { label: '审核通过', value: 'approved' }, { label: '已驳回', value: 'rejected' },
-  { label: '待指派', value: 'pending_assign' }, { label: '已指派', value: 'assigned' },
-  { label: '处理中', value: 'processing' }, { label: '已转派', value: 'transferred' },
-  { label: '已完成', value: 'completed' }, { label: '已关闭', value: 'closed' },
-]
+const statusOptions = computed(() => [
+  { label: t('views.ticket.status_all'), value: '' },
+  { label: t('views.ticket.status_draft'), value: 'draft' },
+  { label: t('views.ticket.status_pending_review'), value: 'pending_review' },
+  { label: t('views.ticket.status_approved'), value: 'approved' },
+  { label: t('views.ticket.status_rejected'), value: 'rejected' },
+  { label: t('views.ticket.status_pending_assign'), value: 'pending_assign' },
+  { label: t('views.ticket.status_assigned'), value: 'assigned' },
+  { label: t('views.ticket.status_processing'), value: 'processing' },
+  { label: t('views.ticket.status_transferred'), value: 'transferred' },
+  { label: t('views.ticket.status_completed'), value: 'completed' },
+  { label: t('views.ticket.status_closed'), value: 'closed' },
+])
 
 const statusColorMap = {
   draft: 'default', pending_review: 'warning', approved: 'info', rejected: 'error',
@@ -37,11 +44,18 @@ const statusColorMap = {
   transferred: 'info', completed: 'success', closed: 'default',
 }
 
-const statusLabelMap = {
-  draft: '草稿', pending_review: '待审核', approved: '审核通过', rejected: '已驳回',
-  pending_assign: '待指派', assigned: '已指派', processing: '处理中',
-  transferred: '已转派', completed: '已完成', closed: '已关闭',
-}
+const statusLabelMap = computed(() => ({
+  draft: t('views.ticket.status_draft'),
+  pending_review: t('views.ticket.status_pending_review'),
+  approved: t('views.ticket.status_approved'),
+  rejected: t('views.ticket.status_rejected'),
+  pending_assign: t('views.ticket.status_pending_assign'),
+  assigned: t('views.ticket.status_assigned'),
+  processing: t('views.ticket.status_processing'),
+  transferred: t('views.ticket.status_transferred'),
+  completed: t('views.ticket.status_completed'),
+  closed: t('views.ticket.status_closed'),
+}))
 
 const cityOptions = ref([])
 const regionOptions = ref([])
@@ -110,36 +124,36 @@ function buildCascaderOptions(tree) {
   }))
 }
 
-const columns = [
-  { title: '工单号', key: 'ticket_no', width: 160, ellipsis: { tooltip: true } },
-  { title: '客户姓名', key: 'customer_name', width: 80, align: 'center' },
-  { title: '联系电话', key: 'customer_phone', width: 100, align: 'center' },
+const columns = computed(() => [
+  { title: t('views.ticket.label_ticket_no'), key: 'ticket_no', width: 160, ellipsis: { tooltip: true } },
+  { title: t('views.ticket.label_customer_name'), key: 'customer_name', width: 80, align: 'center' },
+  { title: t('views.ticket.label_customer_phone'), key: 'customer_phone', width: 100, align: 'center' },
   {
-    title: '申请金额', key: 'apply_amount', width: 80, align: 'center',
+    title: t('views.ticket.label_apply_amount'), key: 'apply_amount', width: 80, align: 'center',
     render(row) { return row.apply_amount ? `¥${row.apply_amount}` : '-' },
   },
   {
-    title: '状态', key: 'status', width: 80, align: 'center',
+    title: t('views.ticket.label_status'), key: 'status', width: 80, align: 'center',
     render(row) {
       return h(NTag, { type: statusColorMap[row.status] || 'default', size: 'small' },
-        { default: () => statusLabelMap[row.status] || row.status })
+        { default: () => statusLabelMap.value[row.status] || row.status })
     },
   },
-  { title: '提交人', key: 'submitter_name', width: 80, align: 'center' },
-  { title: '处理人', key: 'assignee_name', width: 80, align: 'center' },
-  { title: '创建时间', key: 'created_at', width: 140, align: 'center' },
+  { title: t('views.ticket.label_submitter'), key: 'submitter_name', width: 80, align: 'center' },
+  { title: t('views.ticket.label_assignee'), key: 'assignee_name', width: 80, align: 'center' },
+  { title: t('views.ticket.label_created_at'), key: 'created_at', width: 140, align: 'center' },
   {
-    title: '操作', key: 'actions', width: 120, align: 'center', fixed: 'right',
+    title: t('views.ticket.label_actions'), key: 'actions', width: 120, align: 'center', fixed: 'right',
     render(row) {
       return h(NSpace, { justify: 'center', size: 'small' }, {
         default: () => [
           h(NButton, { size: 'small', type: 'primary', onClick: () => viewDetail(row.id) },
-            { default: () => '详情' }),
+            { default: () => t('views.ticket.label_detail') }),
         ]
       })
     },
   },
-]
+])
 
 async function viewDetail(ticketId) {
   const res = await api.getTicket({ ticket_id: ticketId })
@@ -168,9 +182,9 @@ async function sendMsg() {
     })
     msgContent.value = ''
     loadMessages(detailData.value.id)
-    window.$message?.success('发送成功')
+    window.$message?.success(t('views.ticket.message_send_success'))
   } catch (e) {
-    window.$message?.error('发送失败')
+    window.$message?.error(t('views.ticket.message_send_failed'))
   } finally { msgSending.value = false }
 }
 
@@ -201,9 +215,9 @@ async function openAssignModal(action) {
   showAssignModal.value = true
 }
 
-const assignUserColumns = [
+const assignUserColumns = computed(() => [
   {
-    title: '选择', key: 'select', width: 50, align: 'center',
+    title: t('views.ticket.assign_select_column'), key: 'select', width: 50, align: 'center',
     render(row) {
       return h(NRadio, {
         checked: selectedAssigneeId.value === row.id,
@@ -212,42 +226,42 @@ const assignUserColumns = [
     }
   },
   {
-    title: '姓名', key: 'alias', width: 100,
+    title: t('views.ticket.assign_name_column'), key: 'alias', width: 100,
     render(row) {
       return h(NSpace, { size: 'small', align: 'center' }, {
         default: () => [
           row.alias,
-          row.recommended ? h(NTag, { type: 'success', size: 'tiny' }, { default: () => '推荐' }) : null,
+          row.recommended ? h(NTag, { type: 'success', size: 'tiny' }, { default: () => t('views.audit.label_recommended') }) : null,
         ].filter(Boolean)
       })
     }
   },
-  { title: '联系电话', key: 'phone', width: 100 },
+  { title: t('views.ticket.assign_phone_column'), key: 'phone', width: 100 },
   {
-    title: '角色', key: 'roles', width: 100,
+    title: t('views.ticket.assign_role_column'), key: 'roles', width: 100,
     render(row) { return (row.roles || []).join(', ') }
   },
   {
-    title: '负责区域', key: 'regions', width: 120,
+    title: t('views.ticket.assign_region_column'), key: 'regions', width: 120,
     render(row) { return (row.regions || []).join(', ') || '-' }
   },
   {
-    title: '当前工单数', key: 'workload', width: 90, align: 'center',
+    title: t('views.ticket.assign_workload_column'), key: 'workload', width: 90, align: 'center',
     render(row) {
       const type = row.workload === 0 ? 'success' : row.workload <= 3 ? 'warning' : 'error'
-      return h(NTag, { type, size: 'small' }, { default: () => `${row.workload} 单` })
+      return h(NTag, { type, size: 'small' }, { default: () => t('views.ticket.assign_workload_unit', { count: row.workload }) })
     }
   },
   {
-    title: '匹配度', key: 'match_label', width: 80, align: 'center',
+    title: t('views.ticket.assign_match_column'), key: 'match_label', width: 80, align: 'center',
     render(row) {
-      if (row.is_exact_match) return h(NTag, { type: 'success', size: 'small' }, { default: () => '精准匹配' })
-      if (row.is_region_match) return h(NTag, { type: 'info', size: 'small' }, { default: () => '同城匹配' })
+      if (row.is_exact_match) return h(NTag, { type: 'success', size: 'small' }, { default: () => t('views.ticket.assign_exact_match') })
+      if (row.is_region_match) return h(NTag, { type: 'info', size: 'small' }, { default: () => t('views.ticket.assign_city_match') })
       if (row.match_label) return h(NTag, { type: 'default', size: 'small' }, { default: () => row.match_label })
       return '-'
     }
   },
-]
+])
 
 async function confirmAssign() {
   const action = assignAction.value
@@ -257,7 +271,7 @@ async function confirmAssign() {
   try {
     if (action === 'audit_approve') {
       if (!selectedAssigneeId.value) {
-        window.$message?.warning('请选择指派人员')
+        window.$message?.warning(t('views.ticket.message_select_assignee'))
         assignLoading.value = false
         return
       }
@@ -267,10 +281,10 @@ async function confirmAssign() {
         assign_to_id: selectedAssigneeId.value,
         remark: assignRemark.value,
       })
-      window.$message?.success('审核通过并已指派')
+      window.$message?.success(t('views.ticket.message_approved_assigned'))
     } else if (action === 'audit_reject') {
       if (!rejectReason.value.trim()) {
-        window.$message?.warning('请输入驳回原因')
+        window.$message?.warning(t('views.ticket.message_input_reject_reason'))
         assignLoading.value = false
         return
       }
@@ -280,10 +294,10 @@ async function confirmAssign() {
         reject_reason: rejectReason.value,
         remark: assignRemark.value,
       })
-      window.$message?.success('已驳回')
+      window.$message?.success(t('views.ticket.message_rejected'))
     } else if (action === 'assign') {
       if (!selectedAssigneeId.value) {
-        window.$message?.warning('请选择指派人员')
+        window.$message?.warning(t('views.ticket.message_select_assignee'))
         assignLoading.value = false
         return
       }
@@ -292,10 +306,10 @@ async function confirmAssign() {
         assignee_id: selectedAssigneeId.value,
         remark: assignRemark.value,
       })
-      window.$message?.success('指派成功')
+      window.$message?.success(t('views.ticket.message_assigned_success'))
     } else if (action === 'transfer') {
       if (!selectedAssigneeId.value) {
-        window.$message?.warning('请选择转派人员')
+        window.$message?.warning(t('views.ticket.message_select_transfer'))
         assignLoading.value = false
         return
       }
@@ -304,7 +318,7 @@ async function confirmAssign() {
         transfer_to_id: selectedAssigneeId.value,
         reason: assignRemark.value,
       })
-      window.$message?.success('转派成功')
+      window.$message?.success(t('views.ticket.message_transferred_success'))
     }
 
     showAssignModal.value = false
@@ -312,7 +326,7 @@ async function confirmAssign() {
     await viewDetail(ticketId)
     $table.value?.handleSearch()
   } catch (e) {
-    window.$message?.error(e.message || '操作失败')
+    window.$message?.error(e.message || t('common.text.operation_failed'))
   } finally {
     assignLoading.value = false
   }
@@ -322,11 +336,11 @@ async function quickUpdateStatus(status) {
   const ticketId = detailData.value.id
   try {
     await api.updateTicketStatus({ ticket_id: ticketId, status, remark: '' })
-    window.$message?.success('状态更新成功')
+    window.$message?.success(t('views.ticket.message_status_updated'))
     await viewDetail(ticketId)
     $table.value?.handleSearch()
   } catch (e) {
-    window.$message?.error(e.message || '操作失败')
+    window.$message?.error(e.message || t('common.text.operation_failed'))
   }
 }
 
@@ -334,11 +348,11 @@ async function submitTicket() {
   const ticketId = detailData.value.id
   try {
     await api.submitTicket({ ticket_id: ticketId })
-    window.$message?.success('已提交审核')
+    window.$message?.success(t('views.ticket.message_submitted_review'))
     await viewDetail(ticketId)
     $table.value?.handleSearch()
   } catch (e) {
-    window.$message?.error(e.message || '提交失败')
+    window.$message?.error(e.message || t('views.ticket.message_submit_failed'))
   }
 }
 
@@ -346,23 +360,23 @@ async function withdrawTicket() {
   const ticketId = detailData.value.id
   try {
     await api.withdrawTicket({ ticket_id: ticketId })
-    window.$message?.success('已撤回')
+    window.$message?.success(t('views.ticket.message_withdrawn'))
     await viewDetail(ticketId)
     $table.value?.handleSearch()
   } catch (e) {
-    window.$message?.error(e.message || '撤回失败')
+    window.$message?.error(e.message || t('views.ticket.message_withdraw_failed'))
   }
 }
 
 async function revertToReview() {
   const ticketId = detailData.value.id
   try {
-    await api.revertToReview({ ticket_id: ticketId, remark: '管理员打回重审' })
-    window.$message?.success('已打回重审')
+    await api.revertToReview({ ticket_id: ticketId, remark: t('views.ticket.message_revert_remark') })
+    window.$message?.success(t('views.ticket.message_reverted_review'))
     await viewDetail(ticketId)
     $table.value?.handleSearch()
   } catch (e) {
-    window.$message?.error(e.message || '操作失败')
+    window.$message?.error(e.message || t('common.text.operation_failed'))
   }
 }
 
@@ -387,50 +401,58 @@ function editDraftTicket() {
   }
 }
 
-const actionLabelMap = {
-  create: '创建', submit: '提交', withdraw: '撤回', review_approve: '审核通过', review_reject: '审核驳回',
-  assign: '指派', transfer: '转派', start_process: '开始处理', complete: '完成',
-  close: '关闭', resubmit: '重新提交',
-}
+const actionLabelMap = computed(() => ({
+  create: t('views.ticket.action_label_create'),
+  submit: t('views.ticket.action_label_submit'),
+  withdraw: t('views.ticket.action_label_withdraw'),
+  review_approve: t('views.ticket.action_label_review_approve'),
+  review_reject: t('views.ticket.action_label_review_reject'),
+  assign: t('views.ticket.action_label_assign'),
+  transfer: t('views.ticket.action_label_transfer'),
+  start_process: t('views.ticket.action_label_start_process'),
+  complete: t('views.ticket.action_label_complete'),
+  close: t('views.ticket.action_label_close'),
+  resubmit: t('views.ticket.action_label_resubmit'),
+}))
 
-const assignModalTitle = {
-  audit_approve: '审核通过 - 选择指派人员',
-  audit_reject: '审核驳回',
-  assign: '指派工单 - 选择处理人员',
-  transfer: '转派工单 - 选择接收人员',
-}
+const assignModalTitle = computed(() => ({
+  audit_approve: t('views.ticket.assign_modal_approve'),
+  audit_reject: t('views.ticket.assign_modal_reject'),
+  assign: t('views.ticket.assign_modal_assign'),
+  transfer: t('views.ticket.assign_modal_transfer'),
+}))
 
-const validateForm = {
-  customer_name: [{ required: true, message: '请输入客户姓名', trigger: 'blur' }],
-  customer_phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
-  city_id: [{ required: true, type: 'number', message: '请选择城市', trigger: 'change' }],
-}
+const validateForm = computed(() => ({
+  customer_name: [{ required: true, message: t('views.ticket.validate_customer_name'), trigger: 'blur' }],
+  customer_phone: [{ required: true, message: t('views.ticket.validate_customer_phone'), trigger: 'blur' }],
+  city_id: [{ required: true, type: 'number', message: t('views.ticket.validate_city'), trigger: 'change' }],
+}))
 </script>
 
 <template>
-  <CommonPage show-footer title="工单列表">
+  <CommonPage show-footer :title="t('views.ticket.label_ticket_list')">
     <template #action>
       <NButton type="primary" @click="handleAdd">
         <template #icon><TheIcon icon="mdi:plus" :size="16" /></template>
-        新建工单
+        {{ t('views.ticket.label_create_ticket') }}
       </NButton>
     </template>
 
     <CrudTable ref="$table" v-model:query-items="queryItems" :columns="columns" :get-data="api.getTicketList">
       <template #queryBar>
-        <QueryBarItem label="工单号" :label-width="50">
-          <NInput v-model:value="queryItems.ticket_no" clearable placeholder="工单号"
+        <QueryBarItem :label="t('views.ticket.label_ticket_no')" :label-width="50">
+          <NInput v-model:value="queryItems.ticket_no" clearable :placeholder="t('views.ticket.label_ticket_no')"
             @keypress.enter="$table?.handleSearch()" />
         </QueryBarItem>
-        <QueryBarItem label="客户姓名" :label-width="65">
-          <NInput v-model:value="queryItems.customer_name" clearable placeholder="客户姓名"
+        <QueryBarItem :label="t('views.ticket.label_customer_name')" :label-width="65">
+          <NInput v-model:value="queryItems.customer_name" clearable :placeholder="t('views.ticket.label_customer_name')"
             @keypress.enter="$table?.handleSearch()" />
         </QueryBarItem>
-        <QueryBarItem label="状态" :label-width="35">
+        <QueryBarItem :label="t('views.ticket.label_status')" :label-width="35">
           <NSelect v-model:value="queryItems.status" :options="statusOptions" clearable
             style="width: 120px" @update:value="$table?.handleSearch()" />
         </QueryBarItem>
-        <QueryBarItem label="城市" :label-width="35">
+        <QueryBarItem :label="t('views.ticket.label_city')" :label-width="35">
           <NSelect v-model:value="queryItems.city_id" :options="cityOptions" clearable
             style="width: 120px" @update:value="$table?.handleSearch()" />
         </QueryBarItem>
@@ -441,96 +463,96 @@ const validateForm = {
     <CrudModal v-model:visible="modalVisible" :title="modalTitle" :loading="modalLoading" @save="handleSave">
       <NForm ref="modalFormRef" label-placement="left" label-align="left" :label-width="80"
         :model="modalForm" :rules="validateForm">
-        <NFormItem label="客户姓名" path="customer_name">
-          <NInput v-model:value="modalForm.customer_name" placeholder="请输入客户姓名" />
+        <NFormItem :label="t('views.ticket.label_customer_name')" path="customer_name">
+          <NInput v-model:value="modalForm.customer_name" :placeholder="t('views.ticket.placeholder_customer_name')" />
         </NFormItem>
-        <NFormItem label="联系电话" path="customer_phone">
-          <NInput v-model:value="modalForm.customer_phone" placeholder="请输入联系电话" />
+        <NFormItem :label="t('views.ticket.label_customer_phone')" path="customer_phone">
+          <NInput v-model:value="modalForm.customer_phone" :placeholder="t('views.ticket.placeholder_customer_phone')" />
         </NFormItem>
-        <NFormItem label="身份证号"><NInput v-model:value="modalForm.id_card" placeholder="请输入身份证号" /></NFormItem>
-        <NFormItem label="申请金额"><NInputNumber v-model:value="modalForm.apply_amount" placeholder="申请金额" style="width: 100%" /></NFormItem>
-        <NFormItem label="还款方式"><NInput v-model:value="modalForm.repayment_method" placeholder="还款方式" /></NFormItem>
-        <NFormItem label="详细地址"><NInput v-model:value="modalForm.address" placeholder="详细地址" type="textarea" /></NFormItem>
-        <NFormItem label="城市" path="city_id">
-          <NSelect v-model:value="modalForm.city_id" :options="cityOptions" placeholder="请选择城市" />
+        <NFormItem :label="t('views.ticket.label_id_card')"><NInput v-model:value="modalForm.id_card" :placeholder="t('views.ticket.placeholder_id_card')" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_apply_amount')"><NInputNumber v-model:value="modalForm.apply_amount" :placeholder="t('views.ticket.placeholder_apply_amount')" style="width: 100%" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_repayment_method')"><NInput v-model:value="modalForm.repayment_method" :placeholder="t('views.ticket.placeholder_repayment_method')" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_address')"><NInput v-model:value="modalForm.address" :placeholder="t('views.ticket.placeholder_address')" type="textarea" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_city')" path="city_id">
+          <NSelect v-model:value="modalForm.city_id" :options="cityOptions" :placeholder="t('views.ticket.placeholder_city')" />
         </NFormItem>
-        <NFormItem label="所属区域">
-          <NCascader v-model:value="modalForm.region_id" :options="regionOptions" placeholder="选择区域"
+        <NFormItem :label="t('views.ticket.label_region')">
+          <NCascader v-model:value="modalForm.region_id" :options="regionOptions" :placeholder="t('views.ticket.placeholder_region')"
             clearable check-strategy="child" :show-path="true" />
         </NFormItem>
-        <NFormItem label="业务员"><NInput v-model:value="modalForm.salesman" placeholder="业务员" /></NFormItem>
-        <NFormItem label="考察费"><NInputNumber v-model:value="modalForm.inspection_fee" placeholder="考察费" style="width: 100%" /></NFormItem>
-        <NFormItem label="备注"><NInput v-model:value="modalForm.remark" type="textarea" placeholder="备注" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_salesman')"><NInput v-model:value="modalForm.salesman" :placeholder="t('views.ticket.placeholder_salesman')" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_inspection_fee')"><NInputNumber v-model:value="modalForm.inspection_fee" :placeholder="t('views.ticket.placeholder_inspection_fee')" style="width: 100%" /></NFormItem>
+        <NFormItem :label="t('views.ticket.label_remark')"><NInput v-model:value="modalForm.remark" type="textarea" :placeholder="t('views.ticket.placeholder_remark')" /></NFormItem>
       </NForm>
     </CrudModal>
 
     <!-- Detail modal -->
-    <NModal v-model:show="showDetailModal" title="工单详情" preset="card" style="width: 900px; max-height: 85vh;" :body-style="{ overflow: 'auto' }">
+    <NModal v-model:show="showDetailModal" :title="t('views.ticket.label_ticket_detail')" preset="card" style="width: 900px; max-height: 85vh;" :body-style="{ overflow: 'auto' }">
       <template v-if="detailData">
         <NTabs v-model:value="detailTab">
-          <NTabPane name="info" tab="基本信息">
+          <NTabPane name="info" :tab="t('views.ticket.tab_basic_info')">
             <NDescriptions bordered :column="2" label-placement="left" size="small">
-              <NDescriptionsItem label="工单号">{{ detailData.ticket_no }}</NDescriptionsItem>
-              <NDescriptionsItem label="状态">
+              <NDescriptionsItem :label="t('views.ticket.label_ticket_no')">{{ detailData.ticket_no }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_status')">
                 <NTag :type="statusColorMap[detailData.status]" size="small">{{ statusLabelMap[detailData.status] }}</NTag>
               </NDescriptionsItem>
-              <NDescriptionsItem label="客户姓名">{{ detailData.customer_name }}</NDescriptionsItem>
-              <NDescriptionsItem label="联系电话">{{ detailData.customer_phone }}</NDescriptionsItem>
-              <NDescriptionsItem label="身份证号">{{ detailData.id_card || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="申请金额">{{ detailData.apply_amount ? '¥' + detailData.apply_amount : '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="还款方式">{{ detailData.repayment_method || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="考察费">{{ detailData.inspection_fee ? '¥' + detailData.inspection_fee : '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="业务员">{{ detailData.salesman || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="所属城市">{{ detailData.city_name || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="所属区域" :span="2">{{ detailData.region_path || detailData.region_name || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="详细地址" :span="2">{{ detailData.address || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="提交人">{{ detailData.submitter_name }}</NDescriptionsItem>
-              <NDescriptionsItem label="处理人">{{ detailData.assignee_name || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="备注" :span="2">{{ detailData.remark || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="创建时间">{{ detailData.created_at }}</NDescriptionsItem>
-              <NDescriptionsItem label="更新时间">{{ detailData.updated_at }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_customer_name')">{{ detailData.customer_name }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_customer_phone')">{{ detailData.customer_phone }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_id_card')">{{ detailData.id_card || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_apply_amount')">{{ detailData.apply_amount ? '¥' + detailData.apply_amount : '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_repayment_method')">{{ detailData.repayment_method || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_inspection_fee')">{{ detailData.inspection_fee ? '¥' + detailData.inspection_fee : '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_salesman')">{{ detailData.salesman || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_city_name')">{{ detailData.city_name || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_region_name')" :span="2">{{ detailData.region_path || detailData.region_name || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_address')" :span="2">{{ detailData.address || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_submitter')">{{ detailData.submitter_name }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_assignee')">{{ detailData.assignee_name || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_remark')" :span="2">{{ detailData.remark || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_created_at')">{{ detailData.created_at }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('views.ticket.label_updated_at')">{{ detailData.updated_at }}</NDescriptionsItem>
             </NDescriptions>
 
             <!-- Action buttons based on status -->
             <NDivider style="margin: 12px 0" />
             <NSpace>
               <template v-if="detailData.status === 'draft'">
-                <NButton type="warning" @click="editDraftTicket">编辑</NButton>
-                <NButton type="primary" @click="submitTicket">提交审核</NButton>
+                <NButton type="warning" @click="editDraftTicket">{{ t('views.ticket.action_edit') }}</NButton>
+                <NButton type="primary" @click="submitTicket">{{ t('views.ticket.action_submit_audit') }}</NButton>
               </template>
               <template v-if="detailData.status === 'pending_review'">
-                <NButton @click="withdrawTicket">撤回</NButton>
-                <NButton type="success" @click="openAssignModal('audit_approve')">审核通过并指派</NButton>
-                <NButton type="error" @click="openAssignModal('audit_reject')">驳回</NButton>
+                <NButton @click="withdrawTicket">{{ t('views.ticket.action_withdraw') }}</NButton>
+                <NButton type="success" @click="openAssignModal('audit_approve')">{{ t('views.ticket.action_approve_and_assign') }}</NButton>
+                <NButton type="error" @click="openAssignModal('audit_reject')">{{ t('views.ticket.action_reject_ticket') }}</NButton>
               </template>
               <template v-if="detailData.status === 'rejected'">
-                <NButton type="warning" @click="editDraftTicket">修改工单</NButton>
-                <NButton type="primary" @click="submitTicket">重新提交审核</NButton>
+                <NButton type="warning" @click="editDraftTicket">{{ t('views.ticket.action_modify_ticket') }}</NButton>
+                <NButton type="primary" @click="submitTicket">{{ t('views.ticket.action_resubmit_audit') }}</NButton>
               </template>
               <template v-if="['approved', 'pending_assign'].includes(detailData.status)">
-                <NButton type="primary" @click="openAssignModal('assign')">指派</NButton>
+                <NButton type="primary" @click="openAssignModal('assign')">{{ t('views.ticket.action_assign') }}</NButton>
               </template>
               <template v-if="['assigned'].includes(detailData.status)">
-                <NButton type="info" @click="quickUpdateStatus('processing')">开始处理</NButton>
-                <NButton @click="openAssignModal('transfer')">转派</NButton>
-                <NButton type="warning" @click="openAssignModal('assign')">重新指派</NButton>
+                <NButton type="info" @click="quickUpdateStatus('processing')">{{ t('views.ticket.action_start_processing') }}</NButton>
+                <NButton @click="openAssignModal('transfer')">{{ t('views.ticket.action_transfer') }}</NButton>
+                <NButton type="warning" @click="openAssignModal('assign')">{{ t('views.ticket.action_reassign') }}</NButton>
               </template>
               <template v-if="['processing'].includes(detailData.status)">
-                <NButton type="success" @click="quickUpdateStatus('completed')">完成</NButton>
-                <NButton @click="openAssignModal('transfer')">转派</NButton>
+                <NButton type="success" @click="quickUpdateStatus('completed')">{{ t('views.ticket.action_complete') }}</NButton>
+                <NButton @click="openAssignModal('transfer')">{{ t('views.ticket.action_transfer') }}</NButton>
               </template>
               <template v-if="['transferred'].includes(detailData.status)">
-                <NButton type="info" @click="quickUpdateStatus('processing')">开始处理</NButton>
-                <NButton type="success" @click="quickUpdateStatus('completed')">完成</NButton>
-                <NButton @click="openAssignModal('transfer')">再次转派</NButton>
+                <NButton type="info" @click="quickUpdateStatus('processing')">{{ t('views.ticket.action_start_processing') }}</NButton>
+                <NButton type="success" @click="quickUpdateStatus('completed')">{{ t('views.ticket.action_complete') }}</NButton>
+                <NButton @click="openAssignModal('transfer')">{{ t('views.ticket.action_transfer_again') }}</NButton>
               </template>
               <template v-if="['completed'].includes(detailData.status)">
-                <NButton type="warning" @click="revertToReview">打回重审</NButton>
+                <NButton type="warning" @click="revertToReview">{{ t('views.ticket.action_revert_review') }}</NButton>
               </template>
             </NSpace>
           </NTabPane>
 
-          <NTabPane name="flow" tab="流转记录">
+          <NTabPane name="flow" :tab="t('views.ticket.tab_flow_records')">
             <NTimeline>
               <NTimelineItem
                 v-for="record in detailData.flow_records" :key="record.id"
@@ -540,27 +562,27 @@ const validateForm = {
                 :time="record.created_at"
               />
             </NTimeline>
-            <div v-if="!detailData.flow_records?.length" style="text-align:center;padding:20px;color:#999">暂无流转记录</div>
+            <div v-if="!detailData.flow_records?.length" style="text-align:center;padding:20px;color:#999">{{ t('views.ticket.no_flow_records') }}</div>
           </NTabPane>
 
-          <NTabPane name="audit" tab="审核记录">
+          <NTabPane name="audit" :tab="t('views.ticket.tab_audit_records')">
             <NTimeline>
               <NTimelineItem
                 v-for="record in detailData.audit_records" :key="record.id"
                 :type="record.result === 'approved' ? 'success' : 'error'"
-                :title="(record.result === 'approved' ? '审核通过' : '审核驳回') + ' - ' + (record.reviewer_name || '')"
+                :title="(record.result === 'approved' ? t('views.ticket.action_label_review_approve') : t('views.ticket.action_label_review_reject')) + ' - ' + (record.reviewer_name || '')"
                 :content="record.reject_reason || record.remark || ''"
                 :time="record.created_at"
               />
             </NTimeline>
-            <div v-if="!detailData.audit_records?.length" style="text-align:center;padding:20px;color:#999">暂无审核记录</div>
+            <div v-if="!detailData.audit_records?.length" style="text-align:center;padding:20px;color:#999">{{ t('views.ticket.no_audit_records') }}</div>
           </NTabPane>
 
-          <NTabPane name="messages" tab="沟通记录">
+          <NTabPane name="messages" :tab="t('views.ticket.tab_messages')">
             <div style="max-height: 300px; overflow-y: auto; padding: 10px 0;">
               <div v-for="msg in ticketMessages" :key="msg.id" style="margin-bottom: 12px; padding: 8px 12px; background: #f9f9f9; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999;">
-                  <span><b>{{ msg.sender_name }}</b> → {{ msg.receiver_name || '全部' }}</span>
+                  <span><b>{{ msg.sender_name }}</b> → {{ msg.receiver_name || t('views.ticket.receiver_all') }}</span>
                   <span>{{ msg.created_at }}</span>
                 </div>
                 <div style="margin-top: 4px;">
@@ -568,13 +590,13 @@ const validateForm = {
                   {{ msg.content || msg.file_url || '' }}
                 </div>
               </div>
-              <div v-if="!ticketMessages.length" style="text-align:center;padding:20px;color:#999">暂无沟通记录</div>
+              <div v-if="!ticketMessages.length" style="text-align:center;padding:20px;color:#999">{{ t('views.ticket.no_messages') }}</div>
             </div>
             <NDivider style="margin: 8px 0" />
             <NSpace>
-              <NInput v-model:value="msgContent" placeholder="输入消息..." style="width: 500px;"
+              <NInput v-model:value="msgContent" :placeholder="t('views.ticket.placeholder_message')" style="width: 500px;"
                 @keypress.enter="sendMsg" />
-              <NButton type="primary" :loading="msgSending" @click="sendMsg">发送</NButton>
+              <NButton type="primary" :loading="msgSending" @click="sendMsg">{{ t('views.ticket.action_send') }}</NButton>
             </NSpace>
           </NTabPane>
         </NTabs>
@@ -582,17 +604,17 @@ const validateForm = {
     </NModal>
 
     <!-- Assign modal with user selection -->
-    <NModal v-model:show="showAssignModal" :title="assignModalTitle[assignAction] || '指派'" preset="card"
+    <NModal v-model:show="showAssignModal" :title="assignModalTitle[assignAction] || t('views.ticket.assign_modal_default')" preset="card"
       style="width: 900px; max-height: 80vh;" :body-style="{ overflow: 'auto' }">
 
       <!-- Reject only needs reason -->
       <template v-if="assignAction === 'audit_reject'">
         <NForm label-placement="left" :label-width="80">
-          <NFormItem label="驳回原因" required>
-            <NInput v-model:value="rejectReason" type="textarea" :rows="3" placeholder="请输入驳回原因（必填）" />
+          <NFormItem :label="t('views.ticket.label_reject_reason')" required>
+            <NInput v-model:value="rejectReason" type="textarea" :rows="3" :placeholder="t('views.ticket.placeholder_reject_reason')" />
           </NFormItem>
-          <NFormItem label="备注">
-            <NInput v-model:value="assignRemark" type="textarea" :rows="2" placeholder="补充说明（选填）" />
+          <NFormItem :label="t('views.ticket.label_remark')">
+            <NInput v-model:value="assignRemark" type="textarea" :rows="2" :placeholder="t('views.ticket.placeholder_remark_optional')" />
           </NFormItem>
         </NForm>
       </template>
@@ -600,7 +622,7 @@ const validateForm = {
       <!-- Assign/Approve/Transfer needs user selection -->
       <template v-else>
         <div style="margin-bottom: 12px; color: #666; font-size: 13px;">
-          系统已根据工单所属区域自动匹配可用人员，并按工作负载排序。标记 <NTag type="success" size="tiny">推荐</NTag> 的为区域匹配且负载最低的人员。
+          {{ t('views.ticket.assign_hint') }} <NTag type="success" size="tiny">{{ t('views.audit.label_recommended') }}</NTag> {{ t('views.ticket.assign_hint_recommended') }}
         </div>
 
         <NDataTable
@@ -615,22 +637,22 @@ const validateForm = {
         />
 
         <div v-if="!assignableUsers.length" style="text-align: center; padding: 20px; color: #999;">
-          暂无可指派的人员，请先在区域管理中配置负责人
+          {{ t('views.ticket.assign_no_users') }}
         </div>
 
         <NDivider style="margin: 12px 0" />
         <NForm label-placement="left" :label-width="80">
-          <NFormItem label="备注">
-            <NInput v-model:value="assignRemark" type="textarea" :rows="2" placeholder="备注说明（选填）" />
+          <NFormItem :label="t('views.ticket.label_remark')">
+            <NInput v-model:value="assignRemark" type="textarea" :rows="2" :placeholder="t('views.ticket.placeholder_remark_assign')" />
           </NFormItem>
         </NForm>
       </template>
 
       <template #action>
         <NSpace justify="end">
-          <NButton @click="showAssignModal = false">取消</NButton>
+          <NButton @click="showAssignModal = false">{{ t('common.buttons.cancel') }}</NButton>
           <NButton type="primary" :loading="assignLoading" @click="confirmAssign">
-            {{ assignAction === 'audit_reject' ? '确认驳回' : '确认' }}
+            {{ assignAction === 'audit_reject' ? t('views.ticket.confirm_reject') : t('common.buttons.confirm') }}
           </NButton>
         </NSpace>
       </template>

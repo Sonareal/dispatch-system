@@ -5,7 +5,7 @@
 
 /* Profile Header */
 .profile-header {
-  background: linear-gradient(135deg, #2d8cf0 0%, #1a6dd1 100%);
+  background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
   padding: 60rpx 40rpx 50rpx;
   display: flex;
   align-items: center;

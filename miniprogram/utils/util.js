@@ -74,9 +74,9 @@ function formatRelativeTime(dateStr) {
  */
 const STATUS_MAP = {
   pending_review: { text: '待审核', color: '#ff9900', tagClass: 'tag-orange' },
-  approved: { text: '已审核', color: '#2d8cf0', tagClass: 'tag-blue' },
+  approved: { text: '已审核', color: '#1976d2', tagClass: 'tag-blue' },
   rejected: { text: '已驳回', color: '#ed4014', tagClass: 'tag-red' },
-  processing: { text: '处理中', color: '#2d8cf0', tagClass: 'tag-blue' },
+  processing: { text: '处理中', color: '#1976d2', tagClass: 'tag-blue' },
   inspecting: { text: '验车中', color: '#ff9900', tagClass: 'tag-orange' },
   completed: { text: '已完成', color: '#19be6b', tagClass: 'tag-green' },
   cancelled: { text: '已取消', color: '#999999', tagClass: 'tag-grey' }

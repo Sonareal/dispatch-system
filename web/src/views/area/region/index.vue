@@ -1,5 +1,5 @@
 <script setup>
-import { h, onMounted, ref, watch } from 'vue'
+import { h, onMounted, ref, watch, computed } from 'vue'
 import { NButton, NForm, NFormItem, NInput, NSelect, NTree, NSpace, NCard, NTag, NPopover, NModal } from 'naive-ui'
 import CommonPage from '@/components/page/CommonPage.vue'
 import CrudModal from '@/components/table/CrudModal.vue'
@@ -7,6 +7,9 @@ import { renderIcon } from '@/utils'
 import { useCRUD } from '@/composables'
 import api from '@/api'
 import TheIcon from '@/components/icon/TheIcon.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n({ useScope: 'global' })
 
 defineOptions({ name: '行政区管理' })
 
@@ -22,12 +25,12 @@ const managerEditNode = ref(null)
 const managerEditValues = ref([])
 const managerSaving = ref(false)
 
-const levelOptions = [
-  { label: '省', value: 'province' },
-  { label: '市', value: 'city' },
-  { label: '区/县', value: 'district' },
-  { label: '街道', value: 'street' },
-]
+const levelOptions = computed(() => [
+  { label: t('views.region.level_province'), value: 'province' },
+  { label: t('views.region.level_city'), value: 'city' },
+  { label: t('views.region.level_district'), value: 'district' },
+  { label: t('views.region.level_street'), value: 'street' },
+])
 
 const {
   modalVisible, modalTitle, modalLoading, handleSave, modalForm, modalFormRef,
@@ -75,7 +78,7 @@ function addChild(node) {
 
 async function deleteRegion(node) {
   await api.deleteRegion({ region_id: node.id })
-  window.$message?.success('删除成功')
+  window.$message?.success(t('views.region.message_delete_success'))
   loadTree()
 }
 
@@ -101,11 +104,11 @@ async function saveManagers() {
   managerSaving.value = true
   try {
     await api.setRegionManagers({ region_id: managerEditNode.value.id, user_ids: managerEditValues.value })
-    window.$message?.success('负责人设置成功')
+    window.$message?.success(t('views.region.message_manager_success'))
     showManagerModal.value = false
     loadTree()
   } catch (e) {
-    window.$message?.error(e.message || '设置失败')
+    window.$message?.error(e.message || t('views.region.message_manager_failed'))
   } finally { managerSaving.value = false }
 }
 
@@ -138,7 +141,7 @@ const renderSuffix = ({ option }) => {
     default: () => [
       ...managerTags,
       h(NButton, { size: 'tiny', quaternary: true, onClick: (e) => { e.stopPropagation(); openManagerEdit(option) } },
-        { default: () => managers.length ? '改' : '设负责人', icon: () => renderIcon('mdi:account-multiple', { size: 14 })() }),
+        { default: () => managers.length ? t('views.region.label_change_manager') : t('views.region.label_set_manager'), icon: () => renderIcon('mdi:account-multiple', { size: 14 })() }),
       h(NButton, { size: 'tiny', type: 'primary', quaternary: true, onClick: (e) => { e.stopPropagation(); editNode(option) } },
         { icon: () => renderIcon('mdi:pencil', { size: 14 })() }),
       h(NButton, { size: 'tiny', type: 'info', quaternary: true, onClick: (e) => { e.stopPropagation(); addChild(option) } },
@@ -151,12 +154,12 @@ const renderSuffix = ({ option }) => {
 </script>
 
 <template>
-  <CommonPage show-footer title="行政区管理">
+  <CommonPage show-footer :title="t('views.region.label_region_management')">
     <template #action>
       <NSpace>
-        <NSelect v-model:value="selectedCityId" :options="cityOptions" placeholder="选择城市" style="width: 200px" />
+        <NSelect v-model:value="selectedCityId" :options="cityOptions" :placeholder="t('views.region.placeholder_select_city')" style="width: 200px" />
         <NButton type="primary" @click="addRoot">
-          <TheIcon icon="mdi:plus" :size="16" class="mr-5" />添加根节点
+          <TheIcon icon="mdi:plus" :size="16" class="mr-5" />{{ t('views.region.label_add_root') }}
         </NButton>
       </NSpace>
     </template>
@@ -167,34 +170,34 @@ const renderSuffix = ({ option }) => {
         children-field="children" default-expand-all :render-suffix="renderSuffix"
       />
       <div v-if="!treeData.length" style="text-align: center; padding: 40px; color: #999;">
-        暂无行政区数据，请先选择城市并添加
+        {{ t('views.region.label_no_data') }}
       </div>
     </NCard>
 
     <!-- Edit region form -->
     <CrudModal v-model:visible="modalVisible" :title="modalTitle" :loading="modalLoading" @save="handleSave">
       <NForm ref="modalFormRef" label-placement="left" :label-width="80" :model="modalForm">
-        <NFormItem label="名称" path="name"><NInput v-model:value="modalForm.name" placeholder="区域名称" /></NFormItem>
-        <NFormItem label="编码" path="code"><NInput v-model:value="modalForm.code" placeholder="区域编码" /></NFormItem>
-        <NFormItem label="层级" path="level"><NSelect v-model:value="modalForm.level" :options="levelOptions" /></NFormItem>
+        <NFormItem :label="t('views.region.label_name')" path="name"><NInput v-model:value="modalForm.name" :placeholder="t('views.region.placeholder_region_name')" /></NFormItem>
+        <NFormItem :label="t('views.region.label_code')" path="code"><NInput v-model:value="modalForm.code" :placeholder="t('views.region.placeholder_region_code')" /></NFormItem>
+        <NFormItem :label="t('views.region.label_level')" path="level"><NSelect v-model:value="modalForm.level" :options="levelOptions" /></NFormItem>
       </NForm>
     </CrudModal>
 
     <!-- Manager multi-select modal -->
-    <NModal v-model:show="showManagerModal" title="设置区域负责人" preset="card" style="width: 500px">
+    <NModal v-model:show="showManagerModal" :title="t('views.region.label_set_region_manager')" preset="card" style="width: 500px">
       <div style="margin-bottom: 12px; color: #666;">
-        为 <NTag type="info" size="small">{{ managerEditNode?.name }}</NTag> 设置负责人（可多选）
+        {{ t('views.region.label_region_manager_desc', { name: managerEditNode?.name }) }}
       </div>
       <NSelect
         v-model:value="managerEditValues"
         :options="userOptions"
-        placeholder="选择负责人"
+        :placeholder="t('views.region.placeholder_select_manager')"
         multiple filterable clearable
       />
       <template #action>
         <NSpace justify="end">
-          <NButton @click="showManagerModal = false">取消</NButton>
-          <NButton type="primary" :loading="managerSaving" @click="saveManagers">保存</NButton>
+          <NButton @click="showManagerModal = false">{{ t('common.buttons.cancel') }}</NButton>
+          <NButton type="primary" :loading="managerSaving" @click="saveManagers">{{ t('common.buttons.save') }}</NButton>
         </NSpace>
       </template>
     </NModal>

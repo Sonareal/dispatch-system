@@ -19,6 +19,10 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n({ useScope: 'global' })
+
 const props = defineProps({
   /**
    * @remote true: 后端分页  false： 前端分页
@@ -82,7 +86,7 @@ const pagination = reactive({
   pageSizes: [10, 20, 50, 100],
   showSizePicker: true,
   prefix({ itemCount }) {
-    return `共 ${itemCount} 条`
+    return t('common.text.total_items', { count: itemCount })
   },
   onChange: (page) => {
     pagination.page = page

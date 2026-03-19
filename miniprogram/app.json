@@ -8,7 +8,7 @@
     "pages/login/login"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#2d8cf0",
+    "navigationBarBackgroundColor": "#1976d2",
     "navigationBarTitleText": "派单管理系统",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#f5f6f7",
@@ -16,7 +16,7 @@
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#2d8cf0",
+    "selectedColor": "#1976d2",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [

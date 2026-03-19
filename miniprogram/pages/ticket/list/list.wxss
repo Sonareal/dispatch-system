@@ -72,7 +72,7 @@
 }
 
 .tab-active .tab-text {
-  color: #2d8cf0;
+  color: #1976d2;
   font-weight: 600;
 }
 
@@ -84,7 +84,7 @@
   transform: translateX(-50%);
   width: 48rpx;
   height: 6rpx;
-  background-color: #2d8cf0;
+  background-color: #1976d2;
   border-radius: 3rpx;
 }
 
@@ -162,7 +162,7 @@
 
 .ticket-salesman {
   font-size: 24rpx;
-  color: #2d8cf0;
+  color: #1976d2;
 }
 
 .ticket-time {
@@ -184,7 +184,7 @@
   bottom: 200rpx;
   width: 100rpx;
   height: 100rpx;
-  background-color: #2d8cf0;
+  background-color: #1976d2;
   border-radius: 50%;
   display: flex;
   align-items: center;

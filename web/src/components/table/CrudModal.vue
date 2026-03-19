@@ -12,8 +12,8 @@
     <template v-if="showFooter" #footer>
       <footer flex justify-end>
         <slot name="footer">
-          <n-button @click="show = false">取消</n-button>
-          <n-button :loading="loading" ml-20 type="primary" @click="emit('save')">保存</n-button>
+          <n-button @click="show = false">{{ t('common.buttons.cancel') }}</n-button>
+          <n-button :loading="loading" ml-20 type="primary" @click="emit('save')">{{ t('common.buttons.save') }}</n-button>
         </slot>
       </footer>
     </template>
@@ -21,6 +21,10 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n({ useScope: 'global' })
+
 const props = defineProps({
   width: {
     type: String,

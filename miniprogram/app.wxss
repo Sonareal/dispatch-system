@@ -54,7 +54,7 @@ page {
 
 /* Text Styles */
 .text-primary {
-  color: #2d8cf0;
+  color: #1976d2;
 }
 
 .text-success {
@@ -111,7 +111,7 @@ page {
 }
 
 .btn-primary {
-  background-color: #2d8cf0;
+  background-color: #1976d2;
   color: #ffffff;
 }
 
@@ -141,8 +141,8 @@ page {
 
 .btn-outline {
   background-color: transparent;
-  border: 2rpx solid #2d8cf0;
-  color: #2d8cf0;
+  border: 2rpx solid #1976d2;
+  color: #1976d2;
 }
 
 .btn-block {
@@ -209,7 +209,7 @@ page {
 
 .tag-blue {
   background-color: #e8f4ff;
-  color: #2d8cf0;
+  color: #1976d2;
 }
 
 .tag-green {

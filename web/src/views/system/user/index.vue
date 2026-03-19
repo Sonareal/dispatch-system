@@ -1,5 +1,5 @@
 <script setup>
-import { h, onMounted, ref, resolveDirective, withDirectives, watch } from 'vue'
+import { h, onMounted, ref, resolveDirective, withDirectives, watch, computed } from 'vue'
 import {
   NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInput, NSpace,
   NSwitch, NTag, NPopconfirm, NLayout, NLayoutSider, NLayoutContent, NTreeSelect,
@@ -16,6 +16,9 @@ import { useCRUD } from '@/composables'
 import api from '@/api'
 import TheIcon from '@/components/icon/TheIcon.vue'
 import { useUserStore } from '@/store'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n({ useScope: 'global' })
 
 defineOptions({ name: '用户管理' })
 
@@ -56,12 +59,12 @@ onMounted(() => {
   })
 })
 
-const columns = [
-  { title: '用户名', key: 'username', width: 80, align: 'center', ellipsis: { tooltip: true } },
-  { title: '姓名', key: 'alias', width: 80, align: 'center', render(row) { return row.alias || '-' } },
-  { title: '联系电话', key: 'phone', width: 100, align: 'center', render(row) { return row.phone || '-' } },
+const columns = computed(() => [
+  { title: t('views.user.label_username'), key: 'username', width: 80, align: 'center', ellipsis: { tooltip: true } },
+  { title: t('views.user.label_alias'), key: 'alias', width: 80, align: 'center', render(row) { return row.alias || '-' } },
+  { title: t('views.user.label_phone'), key: 'phone', width: 100, align: 'center', render(row) { return row.phone || '-' } },
   {
-    title: '角色', key: 'role', width: 100, align: 'center',
+    title: t('views.user.label_role'), key: 'role', width: 100, align: 'center',
     render(row) {
       const roles = row.roles ?? []
       return h('span', roles.map(r =>
@@ -70,7 +73,7 @@ const columns = [
     },
   },
   {
-    title: '负责区域', key: 'managed_regions', width: 120, align: 'center',
+    title: t('views.user.label_managed_regions'), key: 'managed_regions', width: 120, align: 'center',
     render(row) {
       const regions = row.managed_regions ?? []
       if (!regions.length) return h('span', { style: { color: '#999' } }, '-')
@@ -79,9 +82,9 @@ const columns = [
       ))
     },
   },
-  { title: '邮箱', key: 'email', width: 80, align: 'center', ellipsis: { tooltip: true } },
+  { title: t('views.user.label_email'), key: 'email', width: 80, align: 'center', ellipsis: { tooltip: true } },
   {
-    title: '禁用', key: 'is_active', width: 50, align: 'center',
+    title: t('views.user.label_disabled'), key: 'is_active', width: 50, align: 'center',
     render(row) {
       return h(NSwitch, {
         size: 'small', rubberBand: false, value: row.is_active,
@@ -91,7 +94,7 @@ const columns = [
     },
   },
   {
-    title: '操作', key: 'actions', width: 160, align: 'center', fixed: 'right',
+    title: t('common.buttons.actions'), key: 'actions', width: 160, align: 'center', fixed: 'right',
     render(row) {
       return [
         withDirectives(
@@ -103,48 +106,48 @@ const columns = [
               modalForm.value.role_ids = row.roles.map((e) => (e = e.id))
               delete modalForm.value.dept
             },
-          }, { default: () => '编辑', icon: renderIcon('material-symbols:edit', { size: 14 }) }),
+          }, { default: () => t('views.user.action_edit'), icon: renderIcon('material-symbols:edit', { size: 14 }) }),
           [[vPermission, 'post/api/v1/user/update']]
         ),
         h(NButton, {
           size: 'small', type: 'info', style: 'margin-right: 6px;',
           onClick: () => openRegionEdit(row),
-        }, { default: () => '区域', icon: renderIcon('mdi:map-marker', { size: 14 }) }),
+        }, { default: () => t('views.user.action_region'), icon: renderIcon('mdi:map-marker', { size: 14 }) }),
         h(NPopconfirm, {
           onPositiveClick: () => handleDelete({ user_id: row.id }, false),
         }, {
           trigger: () => withDirectives(
             h(NButton, { size: 'small', type: 'error', style: 'margin-right: 6px;' },
-              { default: () => '删除', icon: renderIcon('material-symbols:delete-outline', { size: 14 }) }),
+              { default: () => t('views.user.action_delete'), icon: renderIcon('material-symbols:delete-outline', { size: 14 }) }),
             [[vPermission, 'delete/api/v1/user/delete']]
           ),
-          default: () => h('div', {}, '确定删除该用户吗?'),
+          default: () => h('div', {}, t('views.user.message_delete_confirm')),
         }),
         !row.is_superuser && h(NPopconfirm, {
           onPositiveClick: async () => {
             try {
               await api.resetPassword({ user_id: row.id })
-              $message.success('密码已成功重置为123456')
+              $message.success(t('views.user.message_reset_password_success'))
               $table.value?.handleSearch()
-            } catch (error) { $message.error('重置密码失败: ' + error.message) }
+            } catch (error) { $message.error(t('views.user.message_reset_password_failed') + ': ' + error.message) }
           },
         }, {
           trigger: () => withDirectives(
             h(NButton, { size: 'small', type: 'warning' },
-              { default: () => '重置密码', icon: renderIcon('material-symbols:lock-reset', { size: 14 }) }),
+              { default: () => t('views.user.action_reset_password'), icon: renderIcon('material-symbols:lock-reset', { size: 14 }) }),
             [[vPermission, 'post/api/v1/user/reset_password']]
           ),
-          default: () => h('div', {}, '确定重置密码为123456吗?'),
+          default: () => h('div', {}, t('views.user.message_reset_password_confirm')),
         }),
       ]
     },
   },
-]
+])
 
 async function handleUpdateDisable(row) {
   if (!row.id) return
   const userStore = useUserStore()
-  if (userStore.userId === row.id) { $message.error('当前登录用户不可禁用！'); return }
+  if (userStore.userId === row.id) { $message.error(t('views.user.message_cannot_disable_self')); return }
   row.publishing = true
   row.is_active = !row.is_active
   row.publishing = false
@@ -152,7 +155,7 @@ async function handleUpdateDisable(row) {
   row.dept_id = row.dept?.id
   try {
     await api.updateUser(row)
-    $message?.success(row.is_active ? '已取消禁用该用户' : '已禁用该用户')
+    $message?.success(row.is_active ? t('views.user.message_enabled') : t('views.user.message_disabled'))
     $table.value?.handleSearch()
   } catch (err) {
     row.is_active = !row.is_active
@@ -203,11 +206,11 @@ async function saveRegions() {
   regionSaving.value = true
   try {
     await api.setUserManagedRegions({ user_id: regionEditUser.value.id, region_ids: regionEditValues.value })
-    window.$message?.success('区域设置成功')
+    window.$message?.success(t('views.user.message_region_success'))
     showRegionModal.value = false
     $table.value?.handleSearch()
   } catch (e) {
-    window.$message?.error(e.message || '设置失败')
+    window.$message?.error(e.message || t('views.user.message_region_failed'))
   } finally { regionSaving.value = false }
 }
 
@@ -224,56 +227,56 @@ const nodeProps = ({ option }) => ({
   },
 })
 
-const validateAddUser = {
-  username: [{ required: true, message: '请输入名称', trigger: ['input', 'blur'] }],
+const validateAddUser = computed(() => ({
+  username: [{ required: true, message: t('views.user.validate_username_required'), trigger: ['input', 'blur'] }],
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: ['input', 'change'] },
+    { required: true, message: t('views.user.validate_email_required'), trigger: ['input', 'change'] },
     {
       trigger: ['blur'],
       validator: (rule, value, callback) => {
         if (!/^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(modalForm.value.email)) {
-          callback('邮箱格式错误'); return
+          callback(t('views.user.validate_email_format')); return
         }
         callback()
       },
     },
   ],
-  password: [{ required: true, message: '请输入密码', trigger: ['input', 'blur', 'change'] }],
+  password: [{ required: true, message: t('views.user.validate_password_required'), trigger: ['input', 'blur', 'change'] }],
   confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: ['input'] },
+    { required: true, message: t('views.user.validate_confirm_password_required'), trigger: ['input'] },
     {
       trigger: ['blur'],
       validator: (rule, value, callback) => {
-        if (value !== modalForm.value.password) { callback('两次密码输入不一致'); return }
+        if (value !== modalForm.value.password) { callback(t('views.user.validate_password_mismatch')); return }
         callback()
       },
     },
   ],
-}
+}))
 </script>
 
 <template>
   <NLayout has-sider wh-full>
     <NLayoutSider bordered content-style="padding: 24px;" :collapsed-width="0" :width="240" show-trigger="arrow-circle">
-      <h1>部门列表</h1>
+      <h1>{{ t('views.user.label_dept_list') }}</h1>
       <br />
       <NTree block-line :data="deptOption" key-field="id" label-field="name" default-expand-all :node-props="nodeProps" />
     </NLayoutSider>
     <NLayoutContent>
-      <CommonPage show-footer title="用户列表">
+      <CommonPage show-footer :title="t('views.user.label_user_list')">
         <template #action>
           <NButton v-permission="'post/api/v1/user/create'" type="primary" @click="handleAdd">
-            <TheIcon icon="material-symbols:add" :size="18" class="mr-5" />新建用户
+            <TheIcon icon="material-symbols:add" :size="18" class="mr-5" />{{ t('views.user.label_create_user') }}
           </NButton>
         </template>
 
         <CrudTable ref="$table" v-model:query-items="queryItems" :columns="columns" :get-data="api.getUserList">
           <template #queryBar>
-            <QueryBarItem label="名称" :label-width="40">
-              <NInput v-model:value="queryItems.username" clearable placeholder="用户名" @keypress.enter="$table?.handleSearch()" />
+            <QueryBarItem :label="t('views.user.label_query_name')" :label-width="40">
+              <NInput v-model:value="queryItems.username" clearable :placeholder="t('views.user.placeholder_username_input')" @keypress.enter="$table?.handleSearch()" />
             </QueryBarItem>
-            <QueryBarItem label="邮箱" :label-width="40">
-              <NInput v-model:value="queryItems.email" clearable placeholder="邮箱" @keypress.enter="$table?.handleSearch()" />
+            <QueryBarItem :label="t('views.user.label_query_email')" :label-width="40">
+              <NInput v-model:value="queryItems.email" clearable :placeholder="t('views.user.placeholder_email_input')" @keypress.enter="$table?.handleSearch()" />
             </QueryBarItem>
           </template>
         </CrudTable>
@@ -282,62 +285,62 @@ const validateAddUser = {
         <CrudModal v-model:visible="modalVisible" :title="modalTitle" :loading="modalLoading" @save="handleSave">
           <NForm ref="modalFormRef" label-placement="left" label-align="left" :label-width="80"
             :model="modalForm" :rules="validateAddUser">
-            <NFormItem label="用户名称" path="username">
-              <NInput v-model:value="modalForm.username" clearable placeholder="请输入用户名称" />
+            <NFormItem :label="t('views.user.label_username')" path="username">
+              <NInput v-model:value="modalForm.username" clearable :placeholder="t('views.user.placeholder_username')" />
             </NFormItem>
-            <NFormItem label="姓名" path="alias">
-              <NInput v-model:value="modalForm.alias" clearable placeholder="请输入姓名" />
+            <NFormItem :label="t('views.user.label_alias')" path="alias">
+              <NInput v-model:value="modalForm.alias" clearable :placeholder="t('views.user.placeholder_alias')" />
             </NFormItem>
-            <NFormItem label="联系电话" path="phone">
-              <NInput v-model:value="modalForm.phone" clearable placeholder="请输入联系电话" />
+            <NFormItem :label="t('views.user.label_phone')" path="phone">
+              <NInput v-model:value="modalForm.phone" clearable :placeholder="t('views.user.placeholder_phone')" />
             </NFormItem>
-            <NFormItem label="邮箱" path="email">
-              <NInput v-model:value="modalForm.email" clearable placeholder="请输入邮箱" />
+            <NFormItem :label="t('views.user.label_email')" path="email">
+              <NInput v-model:value="modalForm.email" clearable :placeholder="t('views.user.placeholder_email')" />
             </NFormItem>
-            <NFormItem v-if="modalAction === 'add'" label="密码" path="password">
-              <NInput v-model:value="modalForm.password" show-password-on="mousedown" type="password" clearable placeholder="请输入密码" />
+            <NFormItem v-if="modalAction === 'add'" :label="t('views.user.label_password')" path="password">
+              <NInput v-model:value="modalForm.password" show-password-on="mousedown" type="password" clearable :placeholder="t('views.user.placeholder_password')" />
             </NFormItem>
-            <NFormItem v-if="modalAction === 'add'" label="确认密码" path="confirmPassword">
-              <NInput v-model:value="modalForm.confirmPassword" show-password-on="mousedown" type="password" clearable placeholder="请确认密码" />
+            <NFormItem v-if="modalAction === 'add'" :label="t('views.user.label_confirm_password')" path="confirmPassword">
+              <NInput v-model:value="modalForm.confirmPassword" show-password-on="mousedown" type="password" clearable :placeholder="t('views.user.placeholder_confirm_password')" />
             </NFormItem>
-            <NFormItem label="角色" path="role_ids">
+            <NFormItem :label="t('views.user.label_role')" path="role_ids">
               <NCheckboxGroup v-model:value="modalForm.role_ids">
                 <NSpace item-style="display: flex;">
                   <NCheckbox v-for="item in roleOption" :key="item.id" :value="item.id" :label="item.name" />
                 </NSpace>
               </NCheckboxGroup>
             </NFormItem>
-            <NFormItem label="超级用户" path="is_superuser">
+            <NFormItem :label="t('views.user.label_is_superuser')" path="is_superuser">
               <NSwitch v-model:value="modalForm.is_superuser" size="small" :checked-value="true" :unchecked-value="false" />
             </NFormItem>
-            <NFormItem label="禁用" path="is_active">
+            <NFormItem :label="t('views.user.label_disabled')" path="is_active">
               <NSwitch v-model:value="modalForm.is_active" :checked-value="false" :unchecked-value="true" :default-value="true" />
             </NFormItem>
-            <NFormItem label="部门" path="dept_id">
+            <NFormItem :label="t('views.user.label_dept')" path="dept_id">
               <NTreeSelect v-model:value="modalForm.dept_id" :options="deptOption" key-field="id" label-field="name"
-                placeholder="请选择部门" clearable default-expand-all />
+                :placeholder="t('views.user.placeholder_select_dept')" clearable default-expand-all />
             </NFormItem>
           </NForm>
         </CrudModal>
 
         <!-- Region edit modal -->
-        <NModal v-model:show="showRegionModal" title="设置负责区域" preset="card" style="width: 550px">
+        <NModal v-model:show="showRegionModal" :title="t('views.user.label_set_region')" preset="card" style="width: 550px">
           <div style="margin-bottom: 12px; color: #666;">
-            为用户 <NTag type="info" size="small">{{ regionEditUser?.alias || regionEditUser?.username }}</NTag> 设置负责的行政区域（可多选）
+            {{ t('views.user.label_region_desc', { name: regionEditUser?.alias || regionEditUser?.username }) }}
           </div>
           <NForm label-placement="left" :label-width="80">
-            <NFormItem label="选择城市">
-              <NSelect v-model:value="regionEditCityId" :options="cityOptions" placeholder="先选择城市" clearable />
+            <NFormItem :label="t('views.user.label_select_city')">
+              <NSelect v-model:value="regionEditCityId" :options="cityOptions" :placeholder="t('views.user.placeholder_select_city')" clearable />
             </NFormItem>
-            <NFormItem label="选择区域">
-              <NSelect v-model:value="regionEditValues" :options="regionFlatOptions" placeholder="选择负责区域"
+            <NFormItem :label="t('views.user.label_select_region')">
+              <NSelect v-model:value="regionEditValues" :options="regionFlatOptions" :placeholder="t('views.user.placeholder_select_region')"
                 multiple filterable clearable :disabled="!regionEditCityId" />
             </NFormItem>
           </NForm>
           <template #action>
             <NSpace justify="end">
-              <NButton @click="showRegionModal = false">取消</NButton>
-              <NButton type="primary" :loading="regionSaving" @click="saveRegions">保存</NButton>
+              <NButton @click="showRegionModal = false">{{ t('common.buttons.cancel') }}</NButton>
+              <NButton type="primary" :loading="regionSaving" @click="saveRegions">{{ t('common.buttons.save') }}</NButton>
             </NSpace>
           </template>
         </NModal>

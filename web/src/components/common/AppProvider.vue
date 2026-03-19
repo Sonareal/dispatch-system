@@ -1,8 +1,8 @@
 <template>
   <n-config-provider
     wh-full
-    :locale="zhCN"
-    :date-locale="dateZhCN"
+    :locale="appStore.locale === 'en' ? enUS : zhCN"
+    :date-locale="appStore.locale === 'en' ? dateEnUS : dateZhCN"
     :theme="appStore.isDark ? darkTheme : undefined"
     :theme-overrides="naiveThemeOverrides"
   >
@@ -24,6 +24,8 @@ import { defineComponent, h } from 'vue'
 import {
   zhCN,
   dateZhCN,
+  enUS,
+  dateEnUS,
   darkTheme,
   useLoadingBar,
   useDialog,

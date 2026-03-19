@@ -115,7 +115,7 @@
   width: 16rpx;
   height: 16rpx;
   border-radius: 50%;
-  background-color: #2d8cf0;
+  background-color: #1976d2;
   border: 4rpx solid #e8f4ff;
 }
 
@@ -194,7 +194,7 @@
 .msg-sender {
   font-size: 24rpx;
   font-weight: 500;
-  color: #2d8cf0;
+  color: #1976d2;
 }
 
 .msg-time {
@@ -236,7 +236,7 @@
 
 .user-select-item.user-selected {
   background-color: #e6f7ff;
-  border-color: #2d8cf0;
+  border-color: #1976d2;
 }
 
 .user-select-main {

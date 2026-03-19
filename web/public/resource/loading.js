@@ -2,17 +2,13 @@
  * 初始化加载效果的svg格式logo
  * @param {string} id - 元素id
  */
- function initSvgLogo(id) {
-  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="120" height="120">
-  <path d="M60 160 C60 160, 55 120, 65 95 C72 78, 78 68, 82 55 C85 46, 92 35, 100 30 C108 25, 118 28, 120 35 C122 42, 118 48, 115 52 L118 50 C122 46, 130 42, 135 45 C140 48, 138 55, 135 60 C132 65, 125 72, 120 78 C115 84, 112 92, 110 100 C108 108, 108 118, 110 128 C112 138, 118 148, 125 155 L140 160"
-    stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M82 55 C78 60, 72 68, 68 78" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.7"/>
-  <path d="M90 42 C85 50, 78 60, 72 72" stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.5"/>
-  <circle cx="108" cy="52" r="4" fill="currentColor"/>
-  <line x1="40" y1="100" x2="55" y2="100" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-  <line x1="35" y1="115" x2="55" y2="115" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
-  <line x1="42" y1="130" x2="58" y2="130" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
-  <line x1="50" y1="170" x2="150" y2="170" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+function initSvgLogo(id) {
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="currentColor" width="80" height="80">
+  <path d="M 130 25 C 125 20, 115 18, 110 22 C 105 26, 108 32, 112 35 L 108 38 C 100 35, 90 38, 85 45 C 78 55, 72 70, 68 85 C 64 100, 62 115, 65 130 C 67 140, 72 148, 78 155 C 82 160, 88 163, 95 165 L 110 170 C 115 171, 118 168, 118 164 L 118 158 C 120 155, 118 150, 115 148 C 112 145, 108 140, 105 135 L 105 125 C 115 130, 125 128, 132 122 C 138 116, 142 108, 144 100 C 146 90, 145 80, 140 72 C 135 62, 128 58, 125 55 C 128 50, 132 45, 138 42 C 142 40, 145 35, 142 30 C 140 27, 135 25, 130 25 Z"/>
+  <path d="M 112 35 C 115 28, 120 22, 118 18 C 116 14, 110 16, 108 20 C 106 24, 108 30, 112 35 Z"/>
+  <circle cx="108" cy="72" r="6" fill="white"/>
+  <circle cx="109" cy="71" r="3" fill="currentColor"/>
+  <path d="M 130 25 C 135 30, 140 40, 138 50 C 136 55, 130 58, 128 62 C 140 55, 150 52, 155 48 C 148 58, 140 65, 135 72 C 145 68, 152 66, 158 65 C 152 72, 144 78, 138 82 C 146 80, 152 80, 156 82 C 150 88, 144 92, 140 95 Z" opacity="0.7"/>
 </svg>`
   const appEl = document.querySelector(id)
   const div = document.createElement('div')
@@ -24,7 +20,7 @@
 
 function addThemeColorCssVars() {
   const key = '__THEME_COLOR__'
-  const defaultColor = '#2d8cf0'
+  const defaultColor = '#1976d2'
   const themeColor = window.localStorage.getItem(key) || defaultColor
   const cssVars = `--primary-color: ${themeColor}`
   document.documentElement.style.cssText = cssVars
