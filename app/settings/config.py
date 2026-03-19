@@ -5,10 +5,12 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    VERSION: str = "0.1.0"
-    APP_TITLE: str = "Vue FastAPI Admin"
-    PROJECT_NAME: str = "Vue FastAPI Admin"
-    APP_DESCRIPTION: str = "Description"
+    VERSION: str = "1.0.0"
+    APP_TITLE: str = "派单管理系统"
+    PROJECT_NAME: str = "派单管理系统"
+    APP_DESCRIPTION: str = "多城市派单管理系统 - 工单管理、审核、指派、沟通"
+
+    UPLOAD_DIR: str = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)), "uploads")
 
     CORS_ORIGINS: typing.List = ["*"]
     CORS_ALLOW_CREDENTIALS: bool = True

@@ -1,0 +1,109 @@
+<view class="page-index">
+  <!-- Welcome Banner -->
+  <view class="banner">
+    <view class="banner-content">
+      <text class="banner-greeting">你好，{{userInfo.name || userInfo.username || '用户'}}</text>
+      <text class="banner-desc">欢迎使用派单管理系统</text>
+    </view>
+    <view class="banner-total">
+      <text class="total-num">{{stats.total}}</text>
+      <text class="total-label">工单总数</text>
+    </view>
+  </view>
+
+  <!-- Stats Cards -->
+  <view class="stats-grid">
+    <view class="stat-card" bindtap="navigateToList" data-status="pending_review">
+      <text class="stat-num stat-orange">{{stats.pending_review}}</text>
+      <text class="stat-label">待审核</text>
+    </view>
+    <view class="stat-card" bindtap="navigateToList" data-status="processing">
+      <text class="stat-num stat-blue">{{stats.processing}}</text>
+      <text class="stat-label">处理中</text>
+    </view>
+    <view class="stat-card" bindtap="navigateToList" data-status="inspecting">
+      <text class="stat-num stat-purple">{{stats.inspecting}}</text>
+      <text class="stat-label">验车中</text>
+    </view>
+    <view class="stat-card" bindtap="navigateToList" data-status="completed">
+      <text class="stat-num stat-green">{{stats.completed}}</text>
+      <text class="stat-label">已完成</text>
+    </view>
+    <view class="stat-card" bindtap="navigateToList" data-status="rejected">
+      <text class="stat-num stat-red">{{stats.rejected}}</text>
+      <text class="stat-label">已驳回</text>
+    </view>
+  </view>
+
+  <!-- Notification Banner -->
+  <view class="notification-bar" wx:if="{{unreadCount > 0}}" bindtap="navigateToNotifications">
+    <text class="notification-icon">&#x1F514;</text>
+    <text class="notification-text">您有 {{unreadCount}} 条未读消息</text>
+    <text class="notification-arrow">></text>
+  </view>
+
+  <!-- Quick Actions -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">快捷操作</text>
+    </view>
+    <view class="action-grid">
+      <view class="action-item" bindtap="navigateToCreate">
+        <view class="action-icon action-icon-blue">+</view>
+        <text class="action-text">新建工单</text>
+      </view>
+      <view class="action-item" bindtap="navigateToList" data-status="pending_review">
+        <view class="action-icon action-icon-orange">&#x2713;</view>
+        <text class="action-text">待审核</text>
+      </view>
+      <view class="action-item" bindtap="navigateToList" data-status="processing">
+        <view class="action-icon action-icon-green">&#x21BB;</view>
+        <text class="action-text">处理中</text>
+      </view>
+      <view class="action-item" bindtap="navigateToTickets">
+        <view class="action-icon action-icon-purple">&#x2630;</view>
+        <text class="action-text">全部工单</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Recent Tickets -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">最近工单</text>
+      <text class="section-more" bindtap="navigateToTickets">查看全部 ></text>
+    </view>
+
+    <view wx:if="{{loading}}" class="loading-wrap">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <view wx:elif="{{recentTickets.length === 0}}" class="empty-wrap">
+      <text class="empty-text">暂无工单数据</text>
+    </view>
+
+    <view wx:else>
+      <view
+        class="ticket-item card"
+        wx:for="{{recentTickets}}"
+        wx:key="id"
+        bindtap="navigateToDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="ticket-header">
+          <text class="ticket-no">{{item.ticket_no || ('工单#' + item.id)}}</text>
+          <text class="tag tag-{{item.status === 'pending_review' ? 'orange' : item.status === 'processing' ? 'blue' : item.status === 'completed' ? 'green' : item.status === 'rejected' ? 'red' : 'grey'}}">
+            {{item.status === 'pending_review' ? '待审核' : item.status === 'processing' ? '处理中' : item.status === 'completed' ? '已完成' : item.status === 'rejected' ? '已驳回' : item.status === 'inspecting' ? '验车中' : item.status === 'cancelled' ? '已取消' : item.status}}
+          </text>
+        </view>
+        <view class="ticket-info">
+          <text class="ticket-customer">{{item.customer_name || '未知客户'}}</text>
+          <text class="ticket-amount">{{item.apply_amount ? ('￥' + item.apply_amount) : ''}}</text>
+        </view>
+        <view class="ticket-footer">
+          <text class="ticket-time">{{item.created_at || ''}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

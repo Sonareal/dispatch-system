@@ -1,0 +1,104 @@
+<view class="page-list">
+  <!-- Search Bar -->
+  <view class="search-bar">
+    <view class="search-wrap">
+      <text class="search-icon">&#x1F50D;</text>
+      <input
+        class="search-input"
+        placeholder="搜索客户姓名/工单号"
+        placeholder-class="search-placeholder"
+        value="{{keyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+        confirm-type="search"
+      />
+      <text wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">&#x2715;</text>
+    </view>
+  </view>
+
+  <!-- Tab Bar -->
+  <view class="tab-bar">
+    <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="tab-list">
+        <view
+          class="tab-item {{activeTab === item.key ? 'tab-active' : ''}}"
+          wx:for="{{tabs}}"
+          wx:key="key"
+          bindtap="onTabChange"
+          data-key="{{item.key}}"
+        >
+          <text class="tab-text">{{item.label}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- Ticket List -->
+  <view class="list-content">
+    <!-- Loading State -->
+    <view wx:if="{{loading && ticketList.length === 0}}" class="loading-wrap">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- Empty State -->
+    <view wx:elif="{{!loading && ticketList.length === 0}}" class="empty-wrap">
+      <text class="empty-text">暂无工单数据</text>
+      <view class="btn btn-primary btn-sm" style="margin-top: 30rpx;" bindtap="navigateToCreate">新建工单</view>
+    </view>
+
+    <!-- List -->
+    <view wx:else>
+      <view class="list-info">
+        <text class="text-grey text-sm">共 {{total}} 条记录</text>
+      </view>
+
+      <view
+        class="ticket-card"
+        wx:for="{{ticketList}}"
+        wx:key="id"
+        bindtap="navigateToDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="ticket-top">
+          <view class="ticket-no-wrap">
+            <text class="ticket-no">{{item.ticket_no || ('工单#' + item.id)}}</text>
+          </view>
+          <view class="tag {{item.statusTagClass}}">{{item.statusText}}</view>
+        </view>
+
+        <view class="ticket-body">
+          <view class="info-row">
+            <text class="info-label">客户姓名</text>
+            <text class="info-value">{{item.customer_name || '-'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">联系电话</text>
+            <text class="info-value">{{item.customer_phone || '-'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">申请金额</text>
+            <text class="info-value text-danger text-bold">{{item.apply_amount ? ('￥' + item.apply_amount) : '-'}}</text>
+          </view>
+        </view>
+
+        <view class="ticket-bottom">
+          <text class="ticket-salesman">{{item.salesman || ''}}</text>
+          <text class="ticket-time">{{item.created_at || ''}}</text>
+        </view>
+      </view>
+
+      <!-- Load More -->
+      <view class="load-more" wx:if="{{loading && ticketList.length > 0}}">
+        <text class="loading-text">加载中...</text>
+      </view>
+      <view class="load-more" wx:elif="{{!hasMore && ticketList.length > 0}}">
+        <text class="text-grey text-sm">没有更多了</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Create FAB -->
+  <view class="fab" bindtap="navigateToCreate">
+    <text class="fab-icon">+</text>
+  </view>
+</view>

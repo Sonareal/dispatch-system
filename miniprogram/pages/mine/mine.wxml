@@ -1,0 +1,80 @@
+<view class="page-mine">
+  <!-- User Profile Header -->
+  <view class="profile-header">
+    <view class="avatar-wrap">
+      <view class="avatar">
+        <text class="avatar-text">{{userInfo.name ? userInfo.name[0] : (userInfo.username ? userInfo.username[0] : '?')}}</text>
+      </view>
+    </view>
+    <view class="profile-info">
+      <text class="profile-name">{{userInfo.name || userInfo.username || '未知用户'}}</text>
+      <text class="profile-role">{{userInfo.role_name || userInfo.role || '员工'}}</text>
+    </view>
+  </view>
+
+  <!-- Menu List -->
+  <view class="menu-section">
+    <view class="menu-title">个人设置</view>
+
+    <view class="menu-item">
+      <view class="menu-left">
+        <text class="menu-icon">&#x1F464;</text>
+        <text class="menu-label">用户名</text>
+      </view>
+      <text class="menu-value">{{userInfo.username || '-'}}</text>
+    </view>
+
+    <view class="menu-item">
+      <view class="menu-left">
+        <text class="menu-icon">&#x1F4DE;</text>
+        <text class="menu-label">手机号</text>
+      </view>
+      <text class="menu-value">{{userInfo.phone || '-'}}</text>
+    </view>
+
+    <picker mode="region" bindchange="onCityChange">
+      <view class="menu-item">
+        <view class="menu-left">
+          <text class="menu-icon">&#x1F4CD;</text>
+          <text class="menu-label">所在城市</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-value">{{cityText}}</text>
+          <text class="menu-arrow">&#x276F;</text>
+        </view>
+      </view>
+    </picker>
+  </view>
+
+  <view class="menu-section">
+    <view class="menu-title">系统</view>
+
+    <view class="menu-item" bindtap="navigateToAbout">
+      <view class="menu-left">
+        <text class="menu-icon">&#x2139;</text>
+        <text class="menu-label">关于</text>
+      </view>
+      <view class="menu-right">
+        <text class="menu-value">v1.0.0</text>
+        <text class="menu-arrow">&#x276F;</text>
+      </view>
+    </view>
+
+    <view class="menu-item" bindtap="handleClearCache">
+      <view class="menu-left">
+        <text class="menu-icon">&#x1F5D1;</text>
+        <text class="menu-label">清除缓存</text>
+      </view>
+      <view class="menu-right">
+        <text class="menu-arrow">&#x276F;</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Logout Button -->
+  <view class="logout-section">
+    <view class="btn btn-danger btn-block" bindtap="handleLogout">
+      退出登录
+    </view>
+  </view>
+</view>

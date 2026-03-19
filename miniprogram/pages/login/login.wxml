@@ -1,0 +1,58 @@
+<view class="login-page">
+  <!-- Header -->
+  <view class="login-header">
+    <view class="login-logo">
+      <text class="logo-icon">&#xe600;</text>
+    </view>
+    <text class="login-title">派单管理系统</text>
+    <text class="login-subtitle">Dispatch Management System</text>
+  </view>
+
+  <!-- Form -->
+  <view class="login-form">
+    <view class="form-item">
+      <view class="input-wrap">
+        <text class="input-icon">&#x1F464;</text>
+        <input
+          class="login-input"
+          placeholder="请输入用户名"
+          placeholder-class="placeholder"
+          value="{{username}}"
+          bindinput="onUsernameInput"
+          maxlength="30"
+        />
+      </view>
+    </view>
+
+    <view class="form-item">
+      <view class="input-wrap">
+        <text class="input-icon">&#x1F512;</text>
+        <input
+          class="login-input"
+          placeholder="请输入密码"
+          placeholder-class="placeholder"
+          password="{{!showPassword}}"
+          value="{{password}}"
+          bindinput="onPasswordInput"
+          maxlength="30"
+        />
+        <text class="toggle-pwd" bindtap="togglePassword">
+          {{showPassword ? '隐藏' : '显示'}}
+        </text>
+      </view>
+    </view>
+
+    <button
+      class="login-btn {{loading ? 'loading' : ''}}"
+      bindtap="handleLogin"
+      disabled="{{loading}}"
+    >
+      {{loading ? '登录中...' : '登 录'}}
+    </button>
+  </view>
+
+  <!-- Footer -->
+  <view class="login-footer">
+    <text class="footer-text">v1.0.0</text>
+  </view>
+</view>

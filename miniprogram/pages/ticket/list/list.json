@@ -1,0 +1,6 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "工单列表",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 100
+}

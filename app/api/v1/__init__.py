@@ -1,13 +1,19 @@
 from fastapi import APIRouter
 
-from app.core.dependency import DependPermission
+from app.core.dependency import DependAuth, DependPermission
 
 from .apis import apis_router
 from .auditlog import auditlog_router
 from .base import base_router
+from .cities import cities_router
 from .depts import depts_router
 from .menus import menus_router
+from .messages import messages_router
+from .oplog import oplog_router
+from .regions import regions_router
 from .roles import roles_router
+from .sysconfig import sysconfig_router
+from .tickets import tickets_router
 from .users import users_router
 
 v1_router = APIRouter()
@@ -19,3 +25,9 @@ v1_router.include_router(menus_router, prefix="/menu", dependencies=[DependPermi
 v1_router.include_router(apis_router, prefix="/api", dependencies=[DependPermission])
 v1_router.include_router(depts_router, prefix="/dept", dependencies=[DependPermission])
 v1_router.include_router(auditlog_router, prefix="/auditlog", dependencies=[DependPermission])
+v1_router.include_router(cities_router, prefix="/city", dependencies=[DependAuth])
+v1_router.include_router(regions_router, prefix="/region", dependencies=[DependAuth])
+v1_router.include_router(tickets_router, prefix="/ticket", dependencies=[DependAuth])
+v1_router.include_router(messages_router, prefix="/message", dependencies=[DependAuth])
+v1_router.include_router(oplog_router, prefix="/oplog", dependencies=[DependPermission])
+v1_router.include_router(sysconfig_router, prefix="/sysconfig", dependencies=[DependPermission])

@@ -1,0 +1,161 @@
+<view class="page-create">
+  <view class="form-section">
+    <view class="section-title">客户信息</view>
+
+    <view class="form-group">
+      <view class="form-label">
+        <text class="required">*</text>客户姓名
+      </view>
+      <input
+        class="form-input"
+        placeholder="请输入客户姓名"
+        value="{{form.customer_name}}"
+        data-field="customer_name"
+        bindinput="onInputChange"
+        maxlength="20"
+      />
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">
+        <text class="required">*</text>联系电话
+      </view>
+      <input
+        class="form-input"
+        placeholder="请输入联系电话"
+        type="number"
+        value="{{form.customer_phone}}"
+        data-field="customer_phone"
+        bindinput="onInputChange"
+        maxlength="11"
+      />
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">身份证号</view>
+      <input
+        class="form-input"
+        placeholder="请输入身份证号"
+        value="{{form.id_card}}"
+        data-field="id_card"
+        bindinput="onInputChange"
+        maxlength="18"
+      />
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">贷款信息</view>
+
+    <view class="form-group">
+      <view class="form-label">
+        <text class="required">*</text>申请金额（元）
+      </view>
+      <input
+        class="form-input"
+        placeholder="请输入申请金额"
+        type="digit"
+        value="{{form.apply_amount}}"
+        data-field="apply_amount"
+        bindinput="onInputChange"
+      />
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">
+        <text class="required">*</text>还款方式
+      </view>
+      <picker
+        mode="selector"
+        range="{{repaymentMethods}}"
+        value="{{repaymentIndex}}"
+        bindchange="onRepaymentChange"
+      >
+        <view class="picker-value {{form.repayment_method ? '' : 'placeholder'}}">
+          {{form.repayment_method || '请选择还款方式'}}
+          <text class="picker-arrow">&#x25BC;</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">验车费（元）</view>
+      <input
+        class="form-input"
+        placeholder="请输入验车费"
+        type="digit"
+        value="{{form.inspection_fee}}"
+        data-field="inspection_fee"
+        bindinput="onInputChange"
+      />
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">其他信息</view>
+
+    <view class="form-group">
+      <view class="form-label">所在城市</view>
+      <picker
+        mode="region"
+        bindchange="onCityChange"
+      >
+        <view class="picker-value {{cityText ? '' : 'placeholder'}}">
+          {{cityText || '请选择省/市/区'}}
+          <text class="picker-arrow">&#x25BC;</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">详细地址</view>
+      <input
+        class="form-input"
+        placeholder="请输入详细地址"
+        value="{{form.address}}"
+        data-field="address"
+        bindinput="onInputChange"
+        maxlength="100"
+      />
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">业务员</view>
+      <input
+        class="form-input"
+        placeholder="请输入业务员姓名"
+        value="{{form.salesman}}"
+        data-field="salesman"
+        bindinput="onInputChange"
+        maxlength="20"
+      />
+    </view>
+
+    <view class="form-group">
+      <view class="form-label">备注</view>
+      <textarea
+        class="form-textarea"
+        placeholder="请输入备注信息"
+        value="{{form.remark}}"
+        data-field="remark"
+        bindinput="onInputChange"
+        maxlength="500"
+        auto-height
+      />
+    </view>
+  </view>
+
+  <!-- Action Buttons -->
+  <view class="form-actions safe-bottom">
+    <view class="btn btn-default" style="flex: 1; margin-right: 20rpx;" bindtap="handleReset">
+      重置
+    </view>
+    <view
+      class="btn btn-primary"
+      style="flex: 2;"
+      bindtap="handleSubmit"
+    >
+      {{submitting ? '提交中...' : '提交工单'}}
+    </view>
+  </view>
+</view>

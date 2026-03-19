@@ -1,0 +1,217 @@
+<view class="page-detail">
+  <!-- Loading -->
+  <view wx:if="{{loading}}" class="loading-wrap" style="padding-top: 200rpx;">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:elif="{{ticket}}">
+    <!-- Status Header -->
+    <view class="status-header" style="background-color: {{statusInfo.color}};">
+      <view class="status-content">
+        <text class="status-text">{{statusInfo.text}}</text>
+        <text class="ticket-no" bindtap="copyTicketNo">{{ticket.ticket_no || ('工单#' + ticket.id)}} (点击复制)</text>
+      </view>
+    </view>
+
+    <!-- Customer Info -->
+    <view class="detail-card">
+      <view class="card-title">客户信息</view>
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="info-label">客户姓名</text>
+          <text class="info-value">{{ticket.customer_name || '-'}}</text>
+        </view>
+        <view class="info-item" bindtap="makePhoneCall">
+          <text class="info-label">联系电话</text>
+          <text class="info-value text-primary">{{ticket.customer_phone || '-'}} &#x260E;</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">身份证号</text>
+          <text class="info-value">{{ticket.id_card_masked || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">所在城市</text>
+          <text class="info-value">{{ticket.province || ''}} {{ticket.city || ''}} {{ticket.district || '-'}}</text>
+        </view>
+        <view class="info-item full-width">
+          <text class="info-label">详细地址</text>
+          <text class="info-value">{{ticket.address || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Loan Info -->
+    <view class="detail-card">
+      <view class="card-title">贷款信息</view>
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="info-label">申请金额</text>
+          <text class="info-value text-danger text-bold">￥{{ticket.apply_amount_fmt}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">还款方式</text>
+          <text class="info-value">{{ticket.repayment_method || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">验车费</text>
+          <text class="info-value">￥{{ticket.inspection_fee_fmt}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">业务员</text>
+          <text class="info-value">{{ticket.salesman || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Remark -->
+    <view class="detail-card" wx:if="{{ticket.remark}}">
+      <view class="card-title">备注</view>
+      <view class="remark-content">
+        <text>{{ticket.remark}}</text>
+      </view>
+    </view>
+
+    <!-- Time Info -->
+    <view class="detail-card">
+      <view class="card-title">时间信息</view>
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="info-label">创建时间</text>
+          <text class="info-value">{{ticket.created_at_fmt || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">更新时间</text>
+          <text class="info-value">{{ticket.updated_at_fmt || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Flow Records -->
+    <view class="detail-card" wx:if="{{flowRecords.length > 0}}">
+      <view class="card-title">流转记录</view>
+      <view class="timeline">
+        <view class="timeline-item" wx:for="{{flowRecords}}" wx:key="id">
+          <view class="timeline-dot"></view>
+          <view class="timeline-content">
+            <view class="timeline-header">
+              <text class="timeline-action">{{item.action || item.description || '操作'}}</text>
+              <text class="timeline-time">{{item.created_at_fmt}}</text>
+            </view>
+            <text class="timeline-operator" wx:if="{{item.operator}}">操作人: {{item.operator}}</text>
+            <text class="timeline-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Audit Records -->
+    <view class="detail-card" wx:if="{{auditRecords.length > 0}}">
+      <view class="card-title">审核记录</view>
+      <view class="timeline">
+        <view class="timeline-item" wx:for="{{auditRecords}}" wx:key="id">
+          <view class="timeline-dot {{item.action === 'approve' ? 'dot-green' : item.action === 'reject' ? 'dot-red' : ''}}"></view>
+          <view class="timeline-content">
+            <view class="timeline-header">
+              <text class="timeline-action">
+                {{item.action === 'approve' ? '审核通过' : item.action === 'reject' ? '审核驳回' : (item.action || '审核')}}
+              </text>
+              <text class="timeline-time">{{item.created_at_fmt}}</text>
+            </view>
+            <text class="timeline-operator" wx:if="{{item.auditor || item.operator}}">审核人: {{item.auditor || item.operator}}</text>
+            <text class="timeline-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+    <!-- Messages -->
+    <view class="detail-card">
+      <view class="card-title">沟通记录</view>
+      <view wx:if="{{messages.length > 0}}">
+        <view class="msg-item" wx:for="{{messages}}" wx:key="id">
+          <view class="msg-header">
+            <text class="msg-sender">{{item.sender_name}}</text>
+            <text class="msg-time">{{item.created_at}}</text>
+          </view>
+          <view class="msg-body">
+            <text wx:if="{{item.msg_type === 'text'}}">{{item.content}}</text>
+            <text wx:elif="{{item.msg_type === 'voice'}}">[语音消息]</text>
+            <text wx:elif="{{item.msg_type === 'image'}}">[图片消息]</text>
+            <text wx:elif="{{item.msg_type === 'system'}}" style="color:#999;">{{item.content}}</text>
+            <text wx:else>{{item.content || item.file_url}}</text>
+          </view>
+        </view>
+      </view>
+      <view wx:else style="text-align:center;padding:20rpx;color:#999;">暂无沟通记录</view>
+
+      <view class="msg-input-bar">
+        <input class="msg-input" placeholder="输入消息..." value="{{msgContent}}" bindinput="onMsgInput" confirm-type="send" bindconfirm="sendMessage" />
+        <view class="btn btn-primary btn-sm" style="width:120rpx;margin-left:16rpx;" bindtap="sendMessage">发送</view>
+      </view>
+    </view>
+
+  <!-- Action Buttons -->
+  <view class="action-bar safe-bottom" wx:if="{{ticket && !loading}}">
+    <!-- Pending Review: show audit buttons -->
+    <block wx:if="{{ticket.status === 'pending_review'}}">
+      <view class="btn btn-danger btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAuditReject">驳回</view>
+      <view class="btn btn-success btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAuditApprove">通过</view>
+      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleAssign">指派</view>
+    </block>
+
+    <!-- Approved: assign or start processing -->
+    <block wx:elif="{{ticket.status === 'approved'}}">
+      <view class="btn btn-primary btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAssign">指派</view>
+      <view class="btn btn-success btn-sm" style="flex:1;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
+    </block>
+
+    <!-- Processing: various actions -->
+    <block wx:elif="{{ticket.status === 'processing'}}">
+      <view class="btn btn-outline btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
+      <view class="btn btn-warning btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="inspecting">验车</view>
+      <view class="btn btn-success btn-sm" style="flex:1;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
+    </block>
+
+    <!-- Inspecting: complete -->
+    <block wx:elif="{{ticket.status === 'inspecting'}}">
+      <view class="btn btn-outline btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
+      <view class="btn btn-success btn-sm" style="flex:1;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
+    </block>
+  </view>
+
+  <!-- Remark Modal -->
+  <view class="modal-mask" wx:if="{{showRemarkModal}}" bindtap="closeRemarkModal"></view>
+  <view class="modal-dialog" wx:if="{{showRemarkModal}}">
+    <view class="modal-title">
+      {{actionType === 'approve' ? '审核通过' : actionType === 'reject' ? '审核驳回' : actionType === 'assign' ? '指派工单' : actionType === 'transfer' ? '转派工单' : '更新状态'}}
+    </view>
+
+    <view wx:if="{{actionType === 'assign' || actionType === 'transfer'}}" class="form-group" style="padding: 0 30rpx;">
+      <view class="form-label">{{actionType === 'assign' ? '指派给' : '转派给'}}</view>
+      <input
+        class="form-input"
+        placeholder="请输入人员姓名"
+        value="{{assignee}}"
+        bindinput="onAssigneeInput"
+      />
+    </view>
+
+    <view class="form-group" style="padding: 0 30rpx;">
+      <view class="form-label">备注{{actionType === 'reject' ? '（必填）' : ''}}</view>
+      <textarea
+        class="form-textarea"
+        placeholder="请输入备注信息"
+        value="{{actionRemark}}"
+        bindinput="onRemarkInput"
+        maxlength="200"
+        auto-height
+      />
+    </view>
+
+    <view class="modal-actions">
+      <view class="btn btn-default btn-sm" style="flex:1; margin-right:20rpx;" bindtap="closeRemarkModal">取消</view>
+      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="confirmAction">确认</view>
+    </view>
+  </view>
+</view>
