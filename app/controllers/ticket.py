@@ -21,6 +21,15 @@ def generate_ticket_no():
     return f"WO{now.strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6].upper()}"
 
 
+def format_user_display(user):
+    """Format user display as '姓名(用户名)' or just username"""
+    if not user:
+        return ""
+    if user.alias and user.alias != user.username:
+        return f"{user.alias}({user.username})"
+    return user.username
+
+
 class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
     def __init__(self):
         super().__init__(model=OrderTicket)
@@ -31,11 +40,11 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         data["submitter_id"] = submitter_id
         data["status"] = TicketStatus.DRAFT
 
-        # Auto-fill salesman with submitter's name if not provided
+        # Auto-fill salesman with submitter's display name if not provided
         if not data.get("salesman"):
             submitter = await User.filter(id=submitter_id).first()
             if submitter:
-                data["salesman"] = submitter.alias or submitter.username
+                data["salesman"] = format_user_display(submitter)
 
         # Auto-assign reviewer if region has a manager
         if data.get("region_id"):
@@ -59,21 +68,22 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
 
     async def submit_ticket(self, ticket_id: int, submitter_id: int, remark: str = None) -> OrderTicket:
         ticket = await self.get(id=ticket_id)
-        if ticket.status != TicketStatus.DRAFT:
-            raise HTTPException(status_code=400, detail="只有草稿状态的工单才能提交")
+        if ticket.status not in (TicketStatus.DRAFT, TicketStatus.REJECTED):
+            raise HTTPException(status_code=400, detail="只有草稿或已驳回状态的工单才能提交")
 
         old_status = ticket.status
         ticket.status = TicketStatus.PENDING_REVIEW
         ticket.last_process_time = datetime.now()
         await ticket.save()
 
+        action = FlowAction.RESUBMIT if old_status == TicketStatus.REJECTED else FlowAction.SUBMIT
         await OrderFlow.create(
             ticket_id=ticket_id,
-            action=FlowAction.SUBMIT,
+            action=action,
             from_status=old_status,
             to_status=TicketStatus.PENDING_REVIEW,
             operator_id=submitter_id,
-            remark=remark or "提交工单",
+            remark=remark or ("重新提交工单" if old_status == TicketStatus.REJECTED else "提交工单"),
         )
         return ticket
 
@@ -138,26 +148,40 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
 
         # Create flow record
         action = FlowAction.REVIEW_APPROVE if result == AuditResult.APPROVED else FlowAction.REVIEW_REJECT
+        flow_remark = remark or reject_reason or ""
+        if assign_to_id:
+            target = await User.filter(id=assign_to_id).first()
+            flow_remark += f" | 指派给 {format_user_display(target)}"
         await OrderFlow.create(
             ticket_id=ticket_id,
             action=action,
             from_status=old_status,
             to_status=ticket.status,
             operator_id=reviewer_id,
-            remark=remark or reject_reason or "",
+            remark=flow_remark,
         )
         return ticket
 
     async def assign_ticket(self, ticket_id: int, assignee_id: int, operator_id: int, remark: str = None):
         ticket = await self.get(id=ticket_id)
-        if ticket.status not in (TicketStatus.PENDING_ASSIGN, TicketStatus.APPROVED):
+        # Allow re-assign from assigned status too (admin/reviewer can change assignment)
+        if ticket.status not in (TicketStatus.PENDING_ASSIGN, TicketStatus.APPROVED, TicketStatus.ASSIGNED):
             raise HTTPException(status_code=400, detail="工单当前状态不允许指派")
 
         old_status = ticket.status
+        old_assignee = ticket.assignee_id
         ticket.assignee_id = assignee_id
         ticket.status = TicketStatus.ASSIGNED
         ticket.last_process_time = datetime.now()
         await ticket.save()
+
+        target = await User.filter(id=assignee_id).first()
+        flow_remark = remark or ""
+        if old_assignee and old_assignee != assignee_id:
+            old_user = await User.filter(id=old_assignee).first()
+            flow_remark += f" | 从 {format_user_display(old_user)} 重新指派给 {format_user_display(target)}"
+        else:
+            flow_remark += f" | 指派给 {format_user_display(target)}"
 
         await OrderFlow.create(
             ticket_id=ticket_id,
@@ -165,13 +189,14 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             from_status=old_status,
             to_status=TicketStatus.ASSIGNED,
             operator_id=operator_id,
-            remark=remark or f"指派给用户{assignee_id}",
+            remark=flow_remark,
         )
         return ticket
 
     async def transfer_ticket(self, ticket_id: int, transfer_to_id: int, operator_id: int, reason: str = None):
         ticket = await self.get(id=ticket_id)
-        if ticket.status not in (TicketStatus.ASSIGNED, TicketStatus.PROCESSING):
+        # Allow transfer from transferred status too (re-transfer)
+        if ticket.status not in (TicketStatus.ASSIGNED, TicketStatus.PROCESSING, TicketStatus.TRANSFERRED):
             raise HTTPException(status_code=400, detail="工单当前状态不允许转派")
 
         old_assignee = ticket.assignee_id
@@ -181,14 +206,41 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         ticket.last_process_time = datetime.now()
         await ticket.save()
 
+        old_user = await User.filter(id=old_assignee).first() if old_assignee else None
+        target = await User.filter(id=transfer_to_id).first()
+        flow_remark = reason or ""
+        flow_remark += f" | 从 {format_user_display(old_user)} 转派给 {format_user_display(target)}"
+
         await OrderFlow.create(
             ticket_id=ticket_id,
             action=FlowAction.TRANSFER,
             from_status=old_status,
             to_status=TicketStatus.TRANSFERRED,
             operator_id=operator_id,
-            remark=reason or f"从用户{old_assignee}转派给用户{transfer_to_id}",
+            remark=flow_remark.strip(),
             transfer_to_id=transfer_to_id,
+        )
+        return ticket
+
+    async def revert_to_review(self, ticket_id: int, operator_id: int, remark: str = None):
+        """Admin/reviewer can revert completed ticket back to pending_review"""
+        ticket = await self.get(id=ticket_id)
+        if ticket.status != TicketStatus.COMPLETED:
+            raise HTTPException(status_code=400, detail="只有已完成的工单才能打回重审")
+
+        old_status = ticket.status
+        ticket.status = TicketStatus.PENDING_REVIEW
+        ticket.assignee_id = None
+        ticket.last_process_time = datetime.now()
+        await ticket.save()
+
+        await OrderFlow.create(
+            ticket_id=ticket_id,
+            action=FlowAction.RESUBMIT,
+            from_status=old_status,
+            to_status=TicketStatus.PENDING_REVIEW,
+            operator_id=operator_id,
+            remark=remark or "管理员打回重新审核",
         )
         return ticket
 
@@ -199,10 +251,10 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         valid_transitions = {
             TicketStatus.DRAFT: [TicketStatus.PENDING_REVIEW],
             TicketStatus.ASSIGNED: [TicketStatus.PROCESSING],
-            TicketStatus.TRANSFERRED: [TicketStatus.PROCESSING],
+            TicketStatus.TRANSFERRED: [TicketStatus.PROCESSING, TicketStatus.COMPLETED],
             TicketStatus.PROCESSING: [TicketStatus.COMPLETED, TicketStatus.CLOSED],
-            TicketStatus.COMPLETED: [TicketStatus.CLOSED],
-            TicketStatus.REJECTED: [TicketStatus.DRAFT, TicketStatus.PENDING_REVIEW],  # Re-edit or resubmit
+            TicketStatus.COMPLETED: [TicketStatus.CLOSED, TicketStatus.PENDING_REVIEW],
+            TicketStatus.REJECTED: [TicketStatus.DRAFT, TicketStatus.PENDING_REVIEW],
         }
 
         allowed = valid_transitions.get(old_status, [])
@@ -237,10 +289,10 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         for flow in flows:
             d = await flow.to_dict()
             operator = await User.filter(id=flow.operator_id).first()
-            d["operator_name"] = operator.alias or operator.username if operator else ""
+            d["operator_name"] = format_user_display(operator)
             if flow.transfer_to_id:
                 target = await User.filter(id=flow.transfer_to_id).first()
-                d["transfer_to_name"] = target.alias or target.username if target else ""
+                d["transfer_to_name"] = format_user_display(target)
             result.append(d)
         return result
 
@@ -250,7 +302,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         for record in records:
             d = await record.to_dict()
             reviewer = await User.filter(id=record.reviewer_id).first()
-            d["reviewer_name"] = reviewer.alias or reviewer.username if reviewer else ""
+            d["reviewer_name"] = format_user_display(reviewer)
             result.append(d)
         return result
 

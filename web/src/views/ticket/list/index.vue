@@ -353,6 +353,18 @@ async function withdrawTicket() {
   }
 }
 
+async function revertToReview() {
+  const ticketId = detailData.value.id
+  try {
+    await api.revertToReview({ ticket_id: ticketId, remark: '管理员打回重审' })
+    window.$message?.success('已打回重审')
+    await viewDetail(ticketId)
+    $table.value?.handleSearch()
+  } catch (e) {
+    window.$message?.error(e.message || '操作失败')
+  }
+}
+
 function editDraftTicket() {
   // Open the create modal with the ticket data prefilled for editing
   const d = detailData.value
@@ -489,7 +501,8 @@ const validateForm = {
                 <NButton type="error" @click="openAssignModal('audit_reject')">驳回</NButton>
               </template>
               <template v-if="detailData.status === 'rejected'">
-                <NButton type="warning" @click="editDraftTicket">修改并重新提交</NButton>
+                <NButton type="warning" @click="editDraftTicket">修改工单</NButton>
+                <NButton type="primary" @click="submitTicket">重新提交审核</NButton>
               </template>
               <template v-if="['approved', 'pending_assign'].includes(detailData.status)">
                 <NButton type="primary" @click="openAssignModal('assign')">指派</NButton>
@@ -497,10 +510,19 @@ const validateForm = {
               <template v-if="['assigned'].includes(detailData.status)">
                 <NButton type="info" @click="quickUpdateStatus('processing')">开始处理</NButton>
                 <NButton @click="openAssignModal('transfer')">转派</NButton>
+                <NButton type="warning" @click="openAssignModal('assign')">重新指派</NButton>
               </template>
               <template v-if="['processing'].includes(detailData.status)">
                 <NButton type="success" @click="quickUpdateStatus('completed')">完成</NButton>
                 <NButton @click="openAssignModal('transfer')">转派</NButton>
+              </template>
+              <template v-if="['transferred'].includes(detailData.status)">
+                <NButton type="info" @click="quickUpdateStatus('processing')">开始处理</NButton>
+                <NButton type="success" @click="quickUpdateStatus('completed')">完成</NButton>
+                <NButton @click="openAssignModal('transfer')">再次转派</NButton>
+              </template>
+              <template v-if="['completed'].includes(detailData.status)">
+                <NButton type="warning" @click="revertToReview">打回重审</NButton>
               </template>
             </NSpace>
           </NTabPane>

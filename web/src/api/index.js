@@ -75,6 +75,7 @@ export default {
   updateTicket: (data = {}) => request.post('/ticket/update', data),
   submitTicket: (data = {}) => request.post('/ticket/submit', data),
   withdrawTicket: (data = {}) => request.post('/ticket/withdraw', data),
+  revertToReview: (data = {}) => request.post('/ticket/revert_to_review', data),
   auditTicket: (data = {}) => request.post('/ticket/audit', data),
   assignTicket: (data = {}) => request.post('/ticket/assign', data),
   transferTicket: (data = {}) => request.post('/ticket/transfer', data),

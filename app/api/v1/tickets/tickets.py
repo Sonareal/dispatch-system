@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter, File, Query, UploadFile
 from tortoise.expressions import Q
 
-from app.controllers.ticket import ticket_controller
+from app.controllers.ticket import format_user_display, ticket_controller
 from app.core.ctx import CTX_USER_ID
 from app.models.admin import OrderTicket, Region, RegionManager, Role, User, UserCity
 from app.schemas.base import Fail, Success, SuccessExtra
@@ -69,10 +69,10 @@ async def list_tickets(
         d = await obj.to_dict()
         # Add submitter/assignee names
         submitter = await User.filter(id=obj.submitter_id).first()
-        d["submitter_name"] = submitter.alias or submitter.username if submitter else ""
+        d["submitter_name"] = format_user_display(submitter)
         if obj.assignee_id:
             assignee = await User.filter(id=obj.assignee_id).first()
-            d["assignee_name"] = assignee.alias or assignee.username if assignee else ""
+            d["assignee_name"] = format_user_display(assignee)
         else:
             d["assignee_name"] = ""
         data.append(d)
@@ -86,10 +86,10 @@ async def get_ticket(ticket_id: int = Query(..., description="工单ID")):
 
     # Add related info
     submitter = await User.filter(id=obj.submitter_id).first()
-    data["submitter_name"] = submitter.alias or submitter.username if submitter else ""
+    data["submitter_name"] = format_user_display(submitter)
     if obj.assignee_id:
         assignee = await User.filter(id=obj.assignee_id).first()
-        data["assignee_name"] = assignee.alias or assignee.username if assignee else ""
+        data["assignee_name"] = format_user_display(assignee)
     else:
         data["assignee_name"] = ""
 
@@ -158,6 +158,13 @@ async def withdraw_ticket(withdraw_in: TicketWithdraw):
     return Success(msg="撤回成功", data=await ticket.to_dict())
 
 
+@router.post("/revert_to_review", summary="打回重新审核")
+async def revert_to_review(data: TicketSubmit):
+    user_id = CTX_USER_ID.get()
+    ticket = await ticket_controller.revert_to_review(data.ticket_id, user_id, "管理员打回重审")
+    return Success(msg="已打回重审", data=await ticket.to_dict())
+
+
 @router.post("/update_status", summary="更新工单状态")
 async def update_ticket_status(status_in: TicketStatusUpdate):
     user_id = CTX_USER_ID.get()
@@ -198,7 +205,7 @@ async def pending_review_tickets(
     for obj in objs:
         d = await obj.to_dict()
         submitter = await User.filter(id=obj.submitter_id).first()
-        d["submitter_name"] = submitter.alias or submitter.username if submitter else ""
+        d["submitter_name"] = format_user_display(submitter)
         data.append(d)
     return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
 

@@ -183,6 +183,44 @@ Page({
     }
   },
 
+  async handleSubmitTicket() {
+    try {
+      await post('/ticket/submit', { ticket_id: parseInt(this.data.id) })
+      wx.showToast({ title: '已提交审核', icon: 'success' })
+      setTimeout(() => this.fetchDetail(), 500)
+    } catch (e) {
+      console.error('Submit failed:', e)
+    }
+  },
+
+  async handleWithdraw() {
+    try {
+      await post('/ticket/withdraw', { ticket_id: parseInt(this.data.id) })
+      wx.showToast({ title: '已撤回', icon: 'success' })
+      setTimeout(() => this.fetchDetail(), 500)
+    } catch (e) {
+      console.error('Withdraw failed:', e)
+    }
+  },
+
+  async handleRevertToReview() {
+    wx.showModal({
+      title: '确认打回',
+      content: '确定要将此工单打回重新审核吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            await post('/ticket/revert_to_review', { ticket_id: parseInt(this.data.id) })
+            wx.showToast({ title: '已打回重审', icon: 'success' })
+            setTimeout(() => this.fetchDetail(), 500)
+          } catch (e) {
+            console.error('Revert failed:', e)
+          }
+        }
+      }
+    })
+  },
+
   makePhoneCall() {
     const phone = this.data.ticket && this.data.ticket.customer_phone
     if (phone) wx.makePhoneCall({ phoneNumber: phone })
