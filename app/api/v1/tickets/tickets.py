@@ -93,6 +93,31 @@ async def get_ticket(ticket_id: int = Query(..., description="工单ID")):
     else:
         data["assignee_name"] = ""
 
+    # Add city/region names
+    if obj.city_id:
+        from app.models.admin import City
+        city = await City.filter(id=obj.city_id).first()
+        data["city_name"] = city.name if city else ""
+    else:
+        data["city_name"] = ""
+
+    if obj.region_id:
+        region = await Region.filter(id=obj.region_id).first()
+        data["region_name"] = region.name if region else ""
+        # Build full region path (e.g. "北京市 > 西城区")
+        if region:
+            path_parts = [region.name]
+            parent = await Region.filter(id=region.parent_id).first() if region.parent_id else None
+            while parent:
+                path_parts.insert(0, parent.name)
+                parent = await Region.filter(id=parent.parent_id).first() if parent.parent_id else None
+            data["region_path"] = " > ".join(path_parts)
+        else:
+            data["region_path"] = ""
+    else:
+        data["region_name"] = ""
+        data["region_path"] = ""
+
     # Flow records
     data["flow_records"] = await ticket_controller.get_flow_records(ticket_id)
     data["audit_records"] = await ticket_controller.get_audit_records(ticket_id)
@@ -341,40 +366,82 @@ async def get_assignable_users(
     # 获取每个用户正在处理的工单数 (status in processing, assigned, transferred)
     active_statuses = ["assigned", "processing", "transferred"]
 
-    result = []
-    # 找出目标区域的精确负责人和同城区域负责人
-    exact_match_ids = set()  # 精确匹配工单区域
-    city_match_ids = set()   # 同城市的区域代表（非精确匹配）
+    # ===== Geographic proximity helper =====
+    # Use region codes to estimate distance. Codes like 110105 (朝阳), 110108 (海淀)
+    # Closer code numbers = geographically closer areas
+    target_region_code = None
+    target_region = None
     if target_region_id:
-        # New: use RegionManager table for exact region match
+        target_region = await Region.filter(id=target_region_id).first()
+        if target_region and target_region.code:
+            target_region_code = target_region.code.replace("_sz", "")  # clean up suffix
+
+    def code_distance(code1, code2):
+        """Estimate geographic proximity from region codes. Lower = closer."""
+        if not code1 or not code2:
+            return 999999
+        try:
+            # Compare numeric codes - same prefix = same parent region = closer
+            c1, c2 = code1.replace("_sz", ""), code2.replace("_sz", "")
+            # First check if same city-level prefix (first 4 digits)
+            if c1[:4] == c2[:4]:
+                return abs(int(c1) - int(c2))
+            # Same province prefix (first 2 digits)
+            if c1[:2] == c2[:2]:
+                return abs(int(c1) - int(c2)) + 10000
+            return abs(int(c1) - int(c2)) + 100000
+        except (ValueError, TypeError):
+            return 999999
+
+    # ===== Build matching sets =====
+    exact_match_ids = set()  # 精确匹配工单区域的负责人
+    city_match_ids = set()   # 同城市的区域代表（非精确匹配）
+    user_min_distance = {}   # user_id -> minimum geographic distance
+
+    if target_region_id and target_region:
+        # Exact match: managers of THIS specific region
         region_manager_user_ids = await RegionManager.filter(
             region_id=target_region_id
         ).values_list("user_id", flat=True)
         exact_match_ids.update(region_manager_user_ids)
 
         # Backward compat: also check Region.manager_id
-        target_region = await Region.filter(id=target_region_id).first()
-        if target_region and target_region.manager_id:
+        if target_region.manager_id:
             exact_match_ids.add(target_region.manager_id)
 
-        # Fallback: other region_rep/reviewer users from the same city (not exact match)
-        if target_region:
-            sibling_regions = await Region.filter(
-                city_id=target_region.city_id
-            ).exclude(id=target_region_id).all()
-            for sr in sibling_regions:
-                if sr.manager_id and sr.manager_id not in exact_match_ids:
-                    city_match_ids.add(sr.manager_id)
-            # Also check RegionManager for sibling regions
-            sibling_region_ids = [sr.id for sr in sibling_regions]
-            if sibling_region_ids:
-                sibling_manager_ids = await RegionManager.filter(
-                    region_id__in=sibling_region_ids
-                ).values_list("user_id", flat=True)
-                for uid in sibling_manager_ids:
-                    if uid not in exact_match_ids:
-                        city_match_ids.add(uid)
+        # City-level match: managers of OTHER regions in the same city
+        sibling_regions = await Region.filter(
+            city_id=target_region.city_id
+        ).exclude(id=target_region_id).all()
 
+        sibling_map = {sr.id: sr for sr in sibling_regions}
+        for sr in sibling_regions:
+            if sr.manager_id and sr.manager_id not in exact_match_ids:
+                city_match_ids.add(sr.manager_id)
+                # Track min distance
+                dist = code_distance(target_region_code, sr.code)
+                if sr.manager_id not in user_min_distance or dist < user_min_distance[sr.manager_id]:
+                    user_min_distance[sr.manager_id] = dist
+
+        # Also check RegionManager for sibling regions
+        sibling_region_ids = [sr.id for sr in sibling_regions]
+        if sibling_region_ids:
+            sibling_rms = await RegionManager.filter(
+                region_id__in=sibling_region_ids
+            ).all()
+            for rm in sibling_rms:
+                if rm.user_id not in exact_match_ids:
+                    city_match_ids.add(rm.user_id)
+                    sr = sibling_map.get(rm.region_id)
+                    if sr:
+                        dist = code_distance(target_region_code, sr.code)
+                        if rm.user_id not in user_min_distance or dist < user_min_distance[rm.user_id]:
+                            user_min_distance[rm.user_id] = dist
+
+    # Only keep exact_match_ids that are actual candidates
+    exact_match_ids = {uid for uid in exact_match_ids if any(u.id == uid for u in candidate_users)}
+
+    result = []
     for user in candidate_users:
         # 工作负载：当前正在处理的工单数
         workload = await OrderTicket.filter(
@@ -389,35 +456,51 @@ async def get_assignable_users(
         managed_regions = manager_region_map.get(user.id, [])
         region_names = [r.name for r in managed_regions]
 
-        # 匹配级别: 0=精确匹配, 1=同城匹配, 2=其他
+        # 匹配级别: 0=精确匹配, 1=同城匹配(有负责区域), 2=同城(无负责区域), 3=其他
         is_exact = user.id in exact_match_ids
         is_city = user.id in city_match_ids
-        match_level = 0 if is_exact else (1 if is_city else 2)
+        if is_exact:
+            match_level = 0
+            match_label = "精准匹配"
+        elif is_city:
+            match_level = 1
+            match_label = "同城匹配"
+        elif managed_regions:
+            match_level = 2
+            match_label = "有区域"
+        else:
+            match_level = 3
+            match_label = ""
+
+        geo_dist = user_min_distance.get(user.id, 999999)
 
         result.append({
             "id": user.id,
             "username": user.username,
-            "alias": user.alias or user.username,
+            "alias": format_user_display(user),
             "phone": user.phone or "",
             "roles": role_names,
             "regions": region_names,
             "workload": workload,
             "is_region_match": is_exact or is_city,
             "is_exact_match": is_exact,
+            "match_label": match_label,
             "recommended": False,
             "_match_level": match_level,
+            "_geo_dist": geo_dist,
         })
 
-    # 排序：精确匹配优先 > 同城匹配 > 其他，同级别按工作负载从低到高
-    result.sort(key=lambda x: (x["_match_level"], x["workload"]))
+    # 排序：精确匹配 > 同城(按地理距离) > 有区域 > 其他，同级别按工作负载从低到高
+    result.sort(key=lambda x: (x["_match_level"], x["_geo_dist"], x["workload"]))
 
-    # 标记推荐用户（排序后的第一个）
+    # 标记推荐用户（排序后的第一个有区域的）
     if result:
         result[0]["recommended"] = True
 
     # 清理内部排序字段
     for r in result:
         del r["_match_level"]
+        del r["_geo_dist"]
 
     return Success(data=result)
 

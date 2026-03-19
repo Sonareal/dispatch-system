@@ -239,11 +239,12 @@ const assignUserColumns = [
     }
   },
   {
-    title: '区域匹配', key: 'is_region_match', width: 80, align: 'center',
+    title: '匹配度', key: 'match_label', width: 80, align: 'center',
     render(row) {
-      return row.is_region_match
-        ? h(NTag, { type: 'success', size: 'small' }, { default: () => '匹配' })
-        : h(NTag, { type: 'default', size: 'small' }, { default: () => '-' })
+      if (row.is_exact_match) return h(NTag, { type: 'success', size: 'small' }, { default: () => '精准匹配' })
+      if (row.is_region_match) return h(NTag, { type: 'info', size: 'small' }, { default: () => '同城匹配' })
+      if (row.match_label) return h(NTag, { type: 'default', size: 'small' }, { default: () => row.match_label })
+      return '-'
     }
   },
 ]
@@ -480,6 +481,8 @@ const validateForm = {
               <NDescriptionsItem label="还款方式">{{ detailData.repayment_method || '-' }}</NDescriptionsItem>
               <NDescriptionsItem label="考察费">{{ detailData.inspection_fee ? '¥' + detailData.inspection_fee : '-' }}</NDescriptionsItem>
               <NDescriptionsItem label="业务员">{{ detailData.salesman || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem label="所属城市">{{ detailData.city_name || '-' }}</NDescriptionsItem>
+              <NDescriptionsItem label="所属区域" :span="2">{{ detailData.region_path || detailData.region_name || '-' }}</NDescriptionsItem>
               <NDescriptionsItem label="详细地址" :span="2">{{ detailData.address || '-' }}</NDescriptionsItem>
               <NDescriptionsItem label="提交人">{{ detailData.submitter_name }}</NDescriptionsItem>
               <NDescriptionsItem label="处理人">{{ detailData.assignee_name || '-' }}</NDescriptionsItem>

@@ -30,8 +30,12 @@
           <text class="info-value">{{ticket.id_card_masked || '-'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">所在城市</text>
-          <text class="info-value">{{ticket.province || ''}} {{ticket.city || ''}} {{ticket.district || '-'}}</text>
+          <text class="info-label">所属城市</text>
+          <text class="info-value">{{ticket.city_name || '-'}}</text>
+        </view>
+        <view class="info-item full-width">
+          <text class="info-label">所属区域</text>
+          <text class="info-value">{{ticket.region_path || ticket.region_name || '-'}}</text>
         </view>
         <view class="info-item full-width">
           <text class="info-label">详细地址</text>
