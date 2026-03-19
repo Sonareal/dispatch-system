@@ -5,15 +5,17 @@ from tortoise.expressions import Q
 
 from app.controllers.ticket import ticket_controller
 from app.core.ctx import CTX_USER_ID
-from app.models.admin import OrderTicket, User
+from app.models.admin import OrderTicket, Region, RegionManager, Role, User, UserCity
 from app.schemas.base import Fail, Success, SuccessExtra
 from app.schemas.tickets import (
     TicketAssign,
     TicketAudit,
     TicketCreate,
     TicketStatusUpdate,
+    TicketSubmit,
     TicketTransfer,
     TicketUpdate,
+    TicketWithdraw,
 )
 from app.settings.config import settings
 
@@ -142,6 +144,20 @@ async def transfer_ticket(transfer_in: TicketTransfer):
     return Success(msg="转派成功", data=await ticket.to_dict())
 
 
+@router.post("/submit", summary="提交工单审核")
+async def submit_ticket(submit_in: TicketSubmit):
+    user_id = CTX_USER_ID.get()
+    ticket = await ticket_controller.submit_ticket(submit_in.ticket_id, user_id)
+    return Success(msg="提交成功", data=await ticket.to_dict())
+
+
+@router.post("/withdraw", summary="撤回工单")
+async def withdraw_ticket(withdraw_in: TicketWithdraw):
+    user_id = CTX_USER_ID.get()
+    ticket = await ticket_controller.withdraw_ticket(withdraw_in.ticket_id, user_id)
+    return Success(msg="撤回成功", data=await ticket.to_dict())
+
+
 @router.post("/update_status", summary="更新工单状态")
 async def update_ticket_status(status_in: TicketStatusUpdate):
     user_id = CTX_USER_ID.get()
@@ -248,6 +264,155 @@ async def upload_attachment(ticket_id: int, file: UploadFile = File(...)):
     await ticket.save()
 
     return Success(msg="上传成功", data={"file_url": file_url, "filename": file.filename})
+
+
+@router.get("/assignable_users", summary="获取可指派用户列表(含工作负载)")
+async def get_assignable_users(
+    ticket_id: int = Query(None, description="工单ID(自动获取区域)"),
+    city_id: int = Query(None, description="城市ID"),
+    region_id: int = Query(None, description="区域ID"),
+):
+    """
+    根据工单区域或指定城市/区域，返回可指派的区域代表列表。
+    包含每个用户的角色、姓名、联系方式、所属区域、当前处理中的工单数量。
+    默认按工作负载从低到高排序。
+    """
+    target_city_id = city_id
+    target_region_id = region_id
+
+    # 如果传了 ticket_id，自动获取工单的城市和区域
+    if ticket_id:
+        ticket = await OrderTicket.filter(id=ticket_id).first()
+        if ticket:
+            if not target_city_id:
+                target_city_id = ticket.city_id
+            if not target_region_id:
+                target_region_id = ticket.region_id
+
+    # 查找可指派用户：拥有 region_rep 或 reviewer 角色的用户
+    assignable_roles = await Role.filter(code__in=["region_rep", "reviewer"]).all()
+    role_ids = [r.id for r in assignable_roles]
+    role_map = {r.id: r for r in assignable_roles}
+
+    if not role_ids:
+        return Success(data=[])
+
+    # 找到拥有这些角色的用户
+    candidate_users = await User.filter(
+        roles__id__in=role_ids, is_active=True
+    ).distinct().prefetch_related("roles")
+
+    # 如果有城市过滤，进一步筛选属于该城市的用户
+    if target_city_id:
+        city_user_ids = await UserCity.filter(city_id=target_city_id).values_list("user_id", flat=True)
+        candidate_users = [u for u in candidate_users if u.id in city_user_ids]
+
+    # 获取所有区域信息，找出每个用户负责的区域
+    all_regions = []
+    if target_city_id:
+        all_regions = await Region.filter(city_id=target_city_id).all()
+    else:
+        all_regions = await Region.all()
+
+    # 建立 user_id -> region 的映射 (from RegionManager table)
+    region_map_by_id = {r.id: r for r in all_regions}
+    all_rm = await RegionManager.filter(region_id__in=[r.id for r in all_regions]).all()
+    manager_region_map = {}
+    for rm in all_rm:
+        if rm.user_id not in manager_region_map:
+            manager_region_map[rm.user_id] = []
+        if rm.region_id in region_map_by_id:
+            manager_region_map[rm.user_id].append(region_map_by_id[rm.region_id])
+    # Also support old manager_id field for backward compat
+    for r in all_regions:
+        if r.manager_id:
+            if r.manager_id not in manager_region_map:
+                manager_region_map[r.manager_id] = []
+            if r not in manager_region_map[r.manager_id]:
+                manager_region_map[r.manager_id].append(r)
+
+    # 获取每个用户正在处理的工单数 (status in processing, assigned, transferred)
+    active_statuses = ["assigned", "processing", "transferred"]
+
+    result = []
+    # 找出目标区域的精确负责人和同城区域负责人
+    exact_match_ids = set()  # 精确匹配工单区域
+    city_match_ids = set()   # 同城市的区域代表（非精确匹配）
+    if target_region_id:
+        # New: use RegionManager table for exact region match
+        region_manager_user_ids = await RegionManager.filter(
+            region_id=target_region_id
+        ).values_list("user_id", flat=True)
+        exact_match_ids.update(region_manager_user_ids)
+
+        # Backward compat: also check Region.manager_id
+        target_region = await Region.filter(id=target_region_id).first()
+        if target_region and target_region.manager_id:
+            exact_match_ids.add(target_region.manager_id)
+
+        # Fallback: other region_rep/reviewer users from the same city (not exact match)
+        if target_region:
+            sibling_regions = await Region.filter(
+                city_id=target_region.city_id
+            ).exclude(id=target_region_id).all()
+            for sr in sibling_regions:
+                if sr.manager_id and sr.manager_id not in exact_match_ids:
+                    city_match_ids.add(sr.manager_id)
+            # Also check RegionManager for sibling regions
+            sibling_region_ids = [sr.id for sr in sibling_regions]
+            if sibling_region_ids:
+                sibling_manager_ids = await RegionManager.filter(
+                    region_id__in=sibling_region_ids
+                ).values_list("user_id", flat=True)
+                for uid in sibling_manager_ids:
+                    if uid not in exact_match_ids:
+                        city_match_ids.add(uid)
+
+    for user in candidate_users:
+        # 工作负载：当前正在处理的工单数
+        workload = await OrderTicket.filter(
+            assignee_id=user.id, status__in=active_statuses
+        ).count()
+
+        # 用户角色
+        user_roles = await user.roles.all()
+        role_names = [r.name for r in user_roles]
+
+        # 用户负责的区域
+        managed_regions = manager_region_map.get(user.id, [])
+        region_names = [r.name for r in managed_regions]
+
+        # 匹配级别: 0=精确匹配, 1=同城匹配, 2=其他
+        is_exact = user.id in exact_match_ids
+        is_city = user.id in city_match_ids
+        match_level = 0 if is_exact else (1 if is_city else 2)
+
+        result.append({
+            "id": user.id,
+            "username": user.username,
+            "alias": user.alias or user.username,
+            "phone": user.phone or "",
+            "roles": role_names,
+            "regions": region_names,
+            "workload": workload,
+            "is_region_match": is_exact or is_city,
+            "is_exact_match": is_exact,
+            "recommended": False,
+            "_match_level": match_level,
+        })
+
+    # 排序：精确匹配优先 > 同城匹配 > 其他，同级别按工作负载从低到高
+    result.sort(key=lambda x: (x["_match_level"], x["workload"]))
+
+    # 标记推荐用户（排序后的第一个）
+    if result:
+        result[0]["recommended"] = True
+
+    # 清理内部排序字段
+    for r in result:
+        del r["_match_level"]
+
+    return Success(data=result)
 
 
 @router.get("/statistics", summary="工单统计")

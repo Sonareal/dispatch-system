@@ -13,7 +13,8 @@ Page({
     showRemarkModal: false,
     actionType: '',
     actionRemark: '',
-    assignee: '',
+    assignableUsers: [],
+    selectedUserId: null,
     msgContent: '',
   },
 
@@ -71,9 +72,7 @@ Page({
     }
   },
 
-  onMsgInput(e) {
-    this.setData({ msgContent: e.detail.value })
-  },
+  onMsgInput(e) { this.setData({ msgContent: e.detail.value }) },
 
   async sendMessage() {
     const content = this.data.msgContent.trim()
@@ -94,50 +93,83 @@ Page({
     }
   },
 
-  handleAuditApprove() {
+  // ===== Actions =====
+
+  async loadAssignableUsers() {
+    try {
+      const res = await get('/ticket/assignable_users', { ticket_id: this.data.id }, { showLoading: false })
+      const users = (res.data || []).map(u => ({
+        ...u,
+        role_text: (u.roles || []).join('/'),
+        region_text: (u.regions || []).join('/'),
+      }))
+      const recommended = users.find(u => u.recommended)
+      this.setData({
+        assignableUsers: users,
+        selectedUserId: recommended ? recommended.id : null,
+      })
+    } catch (e) {
+      console.error('Failed to load assignable users:', e)
+      this.setData({ assignableUsers: [], selectedUserId: null })
+    }
+  },
+
+  selectAssignUser(e) {
+    const id = e.currentTarget.dataset.id
+    this.setData({ selectedUserId: id })
+  },
+
+  async handleAuditApprove() {
     this.setData({ actionType: 'approve', showRemarkModal: true, actionRemark: '' })
+    await this.loadAssignableUsers()
   },
 
   handleAuditReject() {
-    this.setData({ actionType: 'reject', showRemarkModal: true, actionRemark: '' })
+    this.setData({ actionType: 'reject', showRemarkModal: true, actionRemark: '', assignableUsers: [], selectedUserId: null })
   },
 
-  handleAssign() {
-    this.setData({ actionType: 'assign', showRemarkModal: true, actionRemark: '', assignee: '' })
+  async handleAssign() {
+    this.setData({ actionType: 'assign', showRemarkModal: true, actionRemark: '' })
+    await this.loadAssignableUsers()
   },
 
-  handleTransfer() {
-    this.setData({ actionType: 'transfer', showRemarkModal: true, actionRemark: '', assignee: '' })
+  async handleTransfer() {
+    this.setData({ actionType: 'transfer', showRemarkModal: true, actionRemark: '' })
+    await this.loadAssignableUsers()
   },
 
   handleUpdateStatus(e) {
     const status = e.currentTarget.dataset.status
-    this.setData({ actionType: 'status_' + status, showRemarkModal: true, actionRemark: '' })
+    this.setData({ actionType: 'status_' + status, showRemarkModal: true, actionRemark: '', assignableUsers: [], selectedUserId: null })
   },
 
   onRemarkInput(e) { this.setData({ actionRemark: e.detail.value }) },
-  onAssigneeInput(e) { this.setData({ assignee: e.detail.value }) },
+
   closeRemarkModal() {
-    this.setData({ showRemarkModal: false, actionType: '', actionRemark: '', assignee: '' })
+    this.setData({ showRemarkModal: false, actionType: '', actionRemark: '', assignableUsers: [], selectedUserId: null })
   },
 
   async confirmAction() {
-    const { actionType, actionRemark, assignee, id } = this.data
+    const { actionType, actionRemark, selectedUserId, id } = this.data
     try {
       if (actionType === 'approve') {
-        await post('/ticket/audit', { ticket_id: parseInt(id), result: 'approved', remark: actionRemark })
+        if (!selectedUserId) { wx.showToast({ title: '请选择指派人员', icon: 'none' }); return }
+        await post('/ticket/audit', {
+          ticket_id: parseInt(id), result: 'approved',
+          assign_to_id: selectedUserId, remark: actionRemark
+        })
         wx.showToast({ title: '审核通过', icon: 'success' })
       } else if (actionType === 'reject') {
         if (!actionRemark.trim()) { wx.showToast({ title: '请输入驳回原因', icon: 'none' }); return }
         await post('/ticket/audit', { ticket_id: parseInt(id), result: 'rejected', reject_reason: actionRemark })
         wx.showToast({ title: '已驳回', icon: 'success' })
       } else if (actionType === 'assign') {
-        if (!assignee) { wx.showToast({ title: '请输入处理人ID', icon: 'none' }); return }
-        await post('/ticket/assign', { ticket_id: parseInt(id), assignee_id: parseInt(assignee), remark: actionRemark })
+        if (!selectedUserId) { wx.showToast({ title: '请选择处理人', icon: 'none' }); return }
+        await post('/ticket/assign', { ticket_id: parseInt(id), assignee_id: selectedUserId, remark: actionRemark })
         wx.showToast({ title: '指派成功', icon: 'success' })
       } else if (actionType === 'transfer') {
-        if (!assignee) { wx.showToast({ title: '请输入转派人ID', icon: 'none' }); return }
-        await post('/ticket/transfer', { ticket_id: parseInt(id), transfer_to_id: parseInt(assignee), reason: actionRemark })
+        if (!selectedUserId) { wx.showToast({ title: '请选择转派人', icon: 'none' }); return }
+        await post('/ticket/transfer', { ticket_id: parseInt(id), transfer_to_id: selectedUserId, reason: actionRemark })
         wx.showToast({ title: '转派成功', icon: 'success' })
       } else if (actionType.startsWith('status_')) {
         const newStatus = actionType.replace('status_', '')

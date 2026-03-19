@@ -23,7 +23,7 @@ from app.core.exceptions import (
     ResponseValidationHandle,
 )
 from app.log import logger
-from app.models.admin import Api, City, Menu, Region, Role
+from app.models.admin import Api, City, Menu, Region, RegionManager, Role
 from app.models.enums import RegionLevel
 from app.schemas.menus import MenuType
 from app.settings.config import settings
@@ -87,12 +87,7 @@ async def init_superuser():
 async def init_menus():
     menus = await Menu.exists()
     if not menus:
-        # Workbench
-        await Menu.create(
-            menu_type=MenuType.MENU, name="工作台", path="/workbench", order=0,
-            parent_id=0, icon="mdi:view-dashboard-outline", is_hidden=False,
-            component="/workbench", keepalive=False,
-        )
+        # 工作台已在前端 basicRoutes 中定义，无需重复创建菜单
 
         # Ticket management
         ticket_menu = await Menu.create(
@@ -365,8 +360,7 @@ async def init_test_users():
         await rep_hd.roles.add(region_rep_role)
     await UserCity.create(user_id=rep_hd.id, city_id=city.id)
     if hd:
-        hd.manager_id = rep_hd.id
-        await hd.save()
+        await RegionManager.get_or_create(region_id=hd.id, user_id=rep_hd.id)
 
     rep_cy = await user_controller.create_user(UserCreate(
         username="rep_chaoyang", email="rep_cy@test.com", password="123456",
@@ -380,8 +374,7 @@ async def init_test_users():
         await rep_cy.roles.add(region_rep_role)
     await UserCity.create(user_id=rep_cy.id, city_id=city.id)
     if cy:
-        cy.manager_id = rep_cy.id
-        await cy.save()
+        await RegionManager.get_or_create(region_id=cy.id, user_id=rep_cy.id)
 
     rep_ft = await user_controller.create_user(UserCreate(
         username="rep_fengtai", email="rep_ft@test.com", password="123456",
@@ -395,8 +388,7 @@ async def init_test_users():
         await rep_ft.roles.add(region_rep_role)
     await UserCity.create(user_id=rep_ft.id, city_id=city.id)
     if ft:
-        ft.manager_id = rep_ft.id
-        await ft.save()
+        await RegionManager.get_or_create(region_id=ft.id, user_id=rep_ft.id)
 
     # Create front staff
     staff1 = await user_controller.create_user(UserCreate(

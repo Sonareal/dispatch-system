@@ -61,3 +61,11 @@ class TicketStatusUpdate(BaseModel):
     ticket_id: int = Field(..., description="工单ID")
     status: str = Field(..., description="新状态")
     remark: Optional[str] = Field(None, description="备注")
+
+
+class TicketSubmit(BaseModel):
+    ticket_id: int
+
+
+class TicketWithdraw(BaseModel):
+    ticket_id: int

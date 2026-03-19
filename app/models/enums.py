@@ -57,6 +57,7 @@ class CallStatus(StrEnum):
 class FlowAction(StrEnum):
     CREATE = "create"
     SUBMIT = "submit"
+    WITHDRAW = "withdraw"
     REVIEW_APPROVE = "review_approve"
     REVIEW_REJECT = "review_reject"
     ASSIGN = "assign"

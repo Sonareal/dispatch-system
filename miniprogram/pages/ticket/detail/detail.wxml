@@ -184,21 +184,38 @@
   <view class="modal-mask" wx:if="{{showRemarkModal}}" bindtap="closeRemarkModal"></view>
   <view class="modal-dialog" wx:if="{{showRemarkModal}}">
     <view class="modal-title">
-      {{actionType === 'approve' ? '审核通过' : actionType === 'reject' ? '审核驳回' : actionType === 'assign' ? '指派工单' : actionType === 'transfer' ? '转派工单' : '更新状态'}}
+      {{actionType === 'approve' ? '审核通过 - 选择指派人员' : actionType === 'reject' ? '审核驳回' : actionType === 'assign' ? '指派工单' : actionType === 'transfer' ? '转派工单' : '更新状态'}}
     </view>
 
-    <view wx:if="{{actionType === 'assign' || actionType === 'transfer'}}" class="form-group" style="padding: 0 30rpx;">
-      <view class="form-label">{{actionType === 'assign' ? '指派给' : '转派给'}}</view>
-      <input
-        class="form-input"
-        placeholder="请输入人员姓名"
-        value="{{assignee}}"
-        bindinput="onAssigneeInput"
-      />
+    <!-- User selection list for assign/approve/transfer -->
+    <view wx:if="{{actionType === 'assign' || actionType === 'transfer' || actionType === 'approve'}}" style="padding: 0 30rpx; max-height: 400rpx; overflow-y: auto;">
+      <view class="form-label" style="margin-bottom:16rpx;">选择处理人员（按工作负载排序）</view>
+      <view wx:if="{{assignableUsers.length === 0}}" style="text-align:center;padding:20rpx;color:#999;">暂无可指派人员</view>
+      <view
+        wx:for="{{assignableUsers}}" wx:key="id"
+        class="user-select-item {{selectedUserId === item.id ? 'user-selected' : ''}}"
+        bindtap="selectAssignUser" data-id="{{item.id}}"
+      >
+        <view class="user-select-main">
+          <view class="user-select-name">
+            <text>{{item.alias}}</text>
+            <text wx:if="{{item.recommended}}" class="tag tag-green" style="margin-left:8rpx;font-size:20rpx;">推荐</text>
+            <text wx:if="{{item.is_region_match}}" class="tag tag-blue" style="margin-left:8rpx;font-size:20rpx;">区域匹配</text>
+          </view>
+          <text class="user-select-phone">{{item.phone || '-'}}</text>
+        </view>
+        <view class="user-select-meta">
+          <text>角色: {{item.role_text || '-'}}</text>
+          <text style="margin-left:16rpx;">区域: {{item.region_text || '-'}}</text>
+          <text style="margin-left:16rpx;" class="{{item.workload > 3 ? 'text-danger' : item.workload > 0 ? 'text-warning' : 'text-success'}}">
+            负载: {{item.workload}}单
+          </text>
+        </view>
+      </view>
     </view>
 
-    <view class="form-group" style="padding: 0 30rpx;">
-      <view class="form-label">备注{{actionType === 'reject' ? '（必填）' : ''}}</view>
+    <view class="form-group" style="padding: 0 30rpx; margin-top: 16rpx;">
+      <view class="form-label">备注{{actionType === 'reject' ? '（驳回原因，必填）' : ''}}</view>
       <textarea
         class="form-textarea"
         placeholder="请输入备注信息"

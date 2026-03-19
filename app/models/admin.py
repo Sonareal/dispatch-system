@@ -130,10 +130,20 @@ class Region(BaseModel, TimestampMixin):
     parent_id = fields.IntField(default=0, description="父级ID", index=True)
     level = fields.CharEnumField(RegionLevel, description="层级", index=True)
     city_id = fields.IntField(null=True, description="所属城市ID", index=True)
-    manager_id = fields.IntField(null=True, description="负责人ID", index=True)
+    manager_id = fields.IntField(null=True, description="负责人ID(兼容)", index=True)
 
     class Meta:
         table = "region"
+
+
+class RegionManager(BaseModel, TimestampMixin):
+    """区域负责人关联表 - 支持一个区域多个负责人，一个负责人多个区域"""
+    region_id = fields.IntField(description="区域ID", index=True)
+    user_id = fields.IntField(description="用户ID", index=True)
+
+    class Meta:
+        table = "region_manager"
+        unique_together = (("region_id", "user_id"),)
 
 
 class OrderTicket(BaseModel, TimestampMixin):

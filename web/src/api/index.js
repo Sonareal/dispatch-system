@@ -15,6 +15,8 @@ export default {
   updateUser: (data = {}) => request.post('/user/update', data),
   deleteUser: (params = {}) => request.delete(`/user/delete`, { params }),
   resetPassword: (data = {}) => request.post(`/user/reset_password`, data),
+  getUserManagedRegions: (params = {}) => request.get('/user/managed_regions', { params }),
+  setUserManagedRegions: (data = {}) => request.post('/user/set_managed_regions', data),
 
   // === Roles ===
   getRoleList: (params = {}) => request.get('/role/list', { params }),
@@ -63,12 +65,16 @@ export default {
   updateRegion: (data = {}) => request.post('/region/update', data),
   deleteRegion: (params = {}) => request.delete('/region/delete', { params }),
   setRegionManager: (data = {}) => request.post('/region/set_manager', null, { params: data }),
+  setRegionManagers: (data = {}) => request.post('/region/set_managers', data),
+  getRegionManagers: (params = {}) => request.get('/region/managers', { params }),
 
   // === Tickets ===
   createTicket: (data = {}) => request.post('/ticket/create', data),
   getTicketList: (params = {}) => request.get('/ticket/list', { params }),
   getTicket: (params = {}) => request.get('/ticket/get', { params }),
   updateTicket: (data = {}) => request.post('/ticket/update', data),
+  submitTicket: (data = {}) => request.post('/ticket/submit', data),
+  withdrawTicket: (data = {}) => request.post('/ticket/withdraw', data),
   auditTicket: (data = {}) => request.post('/ticket/audit', data),
   assignTicket: (data = {}) => request.post('/ticket/assign', data),
   transferTicket: (data = {}) => request.post('/ticket/transfer', data),
@@ -77,6 +83,7 @@ export default {
   getAuditRecords: (params = {}) => request.get('/ticket/audit_records', { params }),
   getPendingReviewTickets: (params = {}) => request.get('/ticket/pending_review', { params }),
   getMyAssignedTickets: (params = {}) => request.get('/ticket/my_assigned', { params }),
+  getAssignableUsers: (params = {}) => request.get('/ticket/assignable_users', { params }),
   getTicketStatistics: (params = {}) => request.get('/ticket/statistics', { params }),
 
   // === Messages ===

@@ -29,7 +29,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         data = obj_in.model_dump()
         data["ticket_no"] = generate_ticket_no()
         data["submitter_id"] = submitter_id
-        data["status"] = TicketStatus.PENDING_REVIEW
+        data["status"] = TicketStatus.DRAFT
 
         # Auto-fill salesman with submitter's name if not provided
         if not data.get("salesman"):
@@ -51,9 +51,52 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             ticket_id=ticket.id,
             action=FlowAction.CREATE,
             from_status=None,
-            to_status=TicketStatus.PENDING_REVIEW,
+            to_status=TicketStatus.DRAFT,
             operator_id=submitter_id,
             remark="工单创建",
+        )
+        return ticket
+
+    async def submit_ticket(self, ticket_id: int, submitter_id: int, remark: str = None) -> OrderTicket:
+        ticket = await self.get(id=ticket_id)
+        if ticket.status != TicketStatus.DRAFT:
+            raise HTTPException(status_code=400, detail="只有草稿状态的工单才能提交")
+
+        old_status = ticket.status
+        ticket.status = TicketStatus.PENDING_REVIEW
+        ticket.last_process_time = datetime.now()
+        await ticket.save()
+
+        await OrderFlow.create(
+            ticket_id=ticket_id,
+            action=FlowAction.SUBMIT,
+            from_status=old_status,
+            to_status=TicketStatus.PENDING_REVIEW,
+            operator_id=submitter_id,
+            remark=remark or "提交工单",
+        )
+        return ticket
+
+    async def withdraw_ticket(self, ticket_id: int, operator_id: int, remark: str = None) -> OrderTicket:
+        ticket = await self.get(id=ticket_id)
+        if ticket.status != TicketStatus.PENDING_REVIEW:
+            raise HTTPException(status_code=400, detail="只有待审核状态的工单才能撤回")
+
+        if ticket.submitter_id != operator_id:
+            raise HTTPException(status_code=403, detail="只有工单提交人才能撤回工单")
+
+        old_status = ticket.status
+        ticket.status = TicketStatus.DRAFT
+        ticket.last_process_time = datetime.now()
+        await ticket.save()
+
+        await OrderFlow.create(
+            ticket_id=ticket_id,
+            action=FlowAction.WITHDRAW,
+            from_status=old_status,
+            to_status=TicketStatus.DRAFT,
+            operator_id=operator_id,
+            remark=remark or "撤回工单",
         )
         return ticket
 
@@ -154,11 +197,12 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
         old_status = ticket.status
 
         valid_transitions = {
+            TicketStatus.DRAFT: [TicketStatus.PENDING_REVIEW],
             TicketStatus.ASSIGNED: [TicketStatus.PROCESSING],
             TicketStatus.TRANSFERRED: [TicketStatus.PROCESSING],
             TicketStatus.PROCESSING: [TicketStatus.COMPLETED, TicketStatus.CLOSED],
             TicketStatus.COMPLETED: [TicketStatus.CLOSED],
-            TicketStatus.REJECTED: [TicketStatus.PENDING_REVIEW],  # Resubmit
+            TicketStatus.REJECTED: [TicketStatus.DRAFT, TicketStatus.PENDING_REVIEW],  # Re-edit or resubmit
         }
 
         allowed = valid_transitions.get(old_status, [])
@@ -170,6 +214,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             TicketStatus.COMPLETED: FlowAction.COMPLETE,
             TicketStatus.CLOSED: FlowAction.CLOSE,
             TicketStatus.PENDING_REVIEW: FlowAction.RESUBMIT,
+            TicketStatus.DRAFT: FlowAction.WITHDRAW,
         }
 
         ticket.status = new_status

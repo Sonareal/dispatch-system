@@ -1,10 +1,12 @@
 import logging
+from typing import List
 
 from fastapi import APIRouter, Body, Query
 from tortoise.expressions import Q
 
 from app.controllers.dept import dept_controller
 from app.controllers.user import user_controller
+from app.models.admin import Region, RegionManager
 from app.schemas.base import Fail, Success, SuccessExtra
 from app.schemas.users import *
 
@@ -31,8 +33,13 @@ async def list_user(
     total, user_objs = await user_controller.list(page=page, page_size=page_size, search=q)
     data = [await obj.to_dict(m2m=True, exclude_fields=["password"]) for obj in user_objs]
     for item in data:
-        dept_id = item.pop("dept_id", None)
-        item["dept"] = await (await dept_controller.get(id=dept_id)).to_dict() if dept_id else {}
+        dept_id_val = item.pop("dept_id", None)
+        item["dept"] = await (await dept_controller.get(id=dept_id_val)).to_dict() if dept_id_val else {}
+        # Attach managed regions (from RegionManager table)
+        rm_entries = await RegionManager.filter(user_id=item["id"]).all()
+        region_ids = [rm.region_id for rm in rm_entries]
+        managed_regions = await Region.filter(id__in=region_ids).all() if region_ids else []
+        item["managed_regions"] = [{"id": r.id, "name": r.name, "level": r.level.value if hasattr(r.level, 'value') else str(r.level)} for r in managed_regions]
 
     return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
 
@@ -79,3 +86,29 @@ async def delete_user(
 async def reset_password(user_id: int = Body(..., description="用户ID", embed=True)):
     await user_controller.reset_password(user_id)
     return Success(msg="密码已重置为123456")
+
+
+@router.get("/managed_regions", summary="获取用户负责的区域")
+async def get_user_managed_regions(user_id: int = Query(..., description="用户ID")):
+    rm_entries = await RegionManager.filter(user_id=user_id).all()
+    region_ids = [rm.region_id for rm in rm_entries]
+    regions = await Region.filter(id__in=region_ids).all() if region_ids else []
+    data = [{"id": r.id, "name": r.name, "code": r.code, "level": r.level.value if hasattr(r.level, 'value') else str(r.level), "city_id": r.city_id} for r in regions]
+    return Success(data=data)
+
+
+@router.post("/set_managed_regions", summary="设置用户负责的区域")
+async def set_user_managed_regions(
+    user_id: int = Body(..., description="用户ID"),
+    region_ids: List[int] = Body([], description="区域ID列表"),
+):
+    # Clear old entries for this user
+    await RegionManager.filter(user_id=user_id).delete()
+
+    # Create new entries
+    for rid in region_ids:
+        region = await Region.filter(id=rid).first()
+        if region:
+            await RegionManager.get_or_create(region_id=rid, user_id=user_id)
+
+    return Success(msg="区域设置成功")

@@ -225,6 +225,49 @@
   font-size: 28rpx;
 }
 
+/* User Selection */
+.user-select-item {
+  padding: 20rpx;
+  margin-bottom: 12rpx;
+  background-color: #f9f9f9;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+}
+
+.user-select-item.user-selected {
+  background-color: #e6f7ff;
+  border-color: #2d8cf0;
+}
+
+.user-select-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.user-select-name {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.user-select-phone {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.user-select-meta {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.text-success { color: #19be6b; }
+.text-warning { color: #ff9900; }
+.text-danger { color: #ed4014; }
+
 /* Modal */
 .modal-mask {
   position: fixed;

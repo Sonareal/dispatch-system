@@ -29,7 +29,9 @@ Page({
     const userInfo = getUserInfo()
     if (userInfo) {
       this.setData({
-        'form.salesman': userInfo.alias || userInfo.name || userInfo.username || ''
+        'form.salesman': userInfo.alias && userInfo.alias !== userInfo.username
+          ? `${userInfo.alias}(${userInfo.username})`
+          : (userInfo.alias || userInfo.name || userInfo.username || '')
       })
     }
   },
