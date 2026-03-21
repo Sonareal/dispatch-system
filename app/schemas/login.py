@@ -18,3 +18,13 @@ class JWTPayload(BaseModel):
     username: str
     is_superuser: bool
     exp: datetime
+
+
+class WxLoginSchema(BaseModel):
+    code: str = Field(..., description="wx.login获取的code")
+    nickname: str = Field(None, description="微信昵称")
+    avatar_url: str = Field(None, description="微信头像URL")
+
+
+class WxBindSchema(BaseModel):
+    openid: str = Field(..., description="微信OpenID")

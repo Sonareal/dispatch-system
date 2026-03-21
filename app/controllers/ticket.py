@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime
 
@@ -7,12 +8,13 @@ from tortoise.expressions import Q
 from app.core.crud import CRUDBase
 from app.models.admin import (
     AuditRecord,
+    MessageRecord,
     OrderFlow,
     OrderTicket,
     Region,
     User,
 )
-from app.models.enums import AuditResult, FlowAction, TicketStatus
+from app.models.enums import AuditResult, FlowAction, MessageType, TicketStatus
 from app.schemas.tickets import TicketCreate, TicketUpdate
 
 
@@ -28,6 +30,66 @@ def format_user_display(user):
     if user.alias and user.alias != user.username:
         return f"{user.alias}({user.username})"
     return user.username
+
+
+async def notify_user(ticket: OrderTicket, receiver_id: int, sender_id: int, content: str):
+    """Send internal notification + trigger WeChat subscribe message if available"""
+    if not receiver_id or receiver_id == sender_id:
+        return
+    try:
+        await MessageRecord.create(
+            ticket_id=ticket.id,
+            sender_id=sender_id,
+            receiver_id=receiver_id,
+            msg_type=MessageType.SYSTEM,
+            content=content,
+            is_read=False,
+        )
+        # Try WeChat subscribe message
+        receiver = await User.filter(id=receiver_id).first()
+        if receiver and receiver.openid:
+            try:
+                from app.utils.wechat import send_ticket_notification
+                asyncio.create_task(send_ticket_notification(
+                    openid=receiver.openid,
+                    ticket_no=ticket.ticket_no,
+                    status=ticket.status,
+                    content=content,
+                ))
+            except ImportError:
+                pass  # WeChat module not ready yet
+    except Exception as e:
+        pass  # Notification failure should not block ticket operations
+
+
+async def notify_ticket_change(ticket: OrderTicket, action: str, operator_id: int, extra_msg: str = ""):
+    """Notify relevant users about ticket status changes"""
+    status_labels = {
+        "draft": "草稿", "pending_review": "待审核", "approved": "审核通过",
+        "rejected": "已驳回", "pending_assign": "待指派", "assigned": "已指派",
+        "processing": "处理中", "transferred": "已转派", "completed": "已完成",
+        "closed": "已关闭",
+    }
+    operator = await User.filter(id=operator_id).first()
+    op_name = format_user_display(operator)
+    status_text = status_labels.get(ticket.status, ticket.status)
+    ticket_label = ticket.ticket_no or f"工单#{ticket.id}"
+
+    base_msg = f"[{ticket_label}] {extra_msg}" if extra_msg else f"[{ticket_label}] 状态变更为: {status_text}"
+
+    # Determine who to notify based on action
+    notify_targets = set()
+
+    # Always notify submitter (except when they are the operator)
+    if ticket.submitter_id and ticket.submitter_id != operator_id:
+        notify_targets.add(ticket.submitter_id)
+
+    # Notify assignee when relevant
+    if ticket.assignee_id and ticket.assignee_id != operator_id:
+        notify_targets.add(ticket.assignee_id)
+
+    for target_id in notify_targets:
+        await notify_user(ticket, target_id, operator_id, base_msg)
 
 
 class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
@@ -85,6 +147,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             operator_id=submitter_id,
             remark=remark or ("重新提交工单" if old_status == TicketStatus.REJECTED else "提交工单"),
         )
+        await notify_ticket_change(ticket, "submit", submitter_id, "工单已提交，等待审核")
         return ticket
 
     async def withdraw_ticket(self, ticket_id: int, operator_id: int, remark: str = None) -> OrderTicket:
@@ -160,6 +223,10 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             operator_id=reviewer_id,
             remark=flow_remark,
         )
+        if result == AuditResult.APPROVED:
+            await notify_ticket_change(ticket, "approve", reviewer_id, "工单审核通过，已指派处理")
+        else:
+            await notify_ticket_change(ticket, "reject", reviewer_id, f"工单被驳回: {reject_reason or ''}")
         return ticket
 
     async def assign_ticket(self, ticket_id: int, assignee_id: int, operator_id: int, remark: str = None):
@@ -191,6 +258,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             operator_id=operator_id,
             remark=flow_remark,
         )
+        await notify_ticket_change(ticket, "assign", operator_id, f"工单已指派给 {format_user_display(target)}")
         return ticket
 
     async def transfer_ticket(self, ticket_id: int, transfer_to_id: int, operator_id: int, reason: str = None):
@@ -220,6 +288,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             remark=flow_remark.strip(),
             transfer_to_id=transfer_to_id,
         )
+        await notify_ticket_change(ticket, "transfer", operator_id, f"工单已转派给 {format_user_display(target)}")
         return ticket
 
     async def revert_to_review(self, ticket_id: int, operator_id: int, remark: str = None):
@@ -242,6 +311,7 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             operator_id=operator_id,
             remark=remark or "管理员打回重新审核",
         )
+        await notify_ticket_change(ticket, "revert", operator_id, "工单已被打回重新审核")
         return ticket
 
     async def update_status(self, ticket_id: int, new_status: str, operator_id: int, remark: str = None):
@@ -281,6 +351,11 @@ class TicketController(CRUDBase[OrderTicket, TicketCreate, TicketUpdate]):
             operator_id=operator_id,
             remark=remark or "",
         )
+        status_labels = {
+            "processing": "开始处理", "completed": "已完成", "closed": "已关闭",
+        }
+        msg = status_labels.get(new_status, f"状态变更为 {new_status}")
+        await notify_ticket_change(ticket, "status_update", operator_id, msg)
         return ticket
 
     async def get_flow_records(self, ticket_id: int):

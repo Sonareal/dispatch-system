@@ -7,6 +7,26 @@ page {
   box-sizing: border-box;
 }
 
+/* Reset native button styles */
+button {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  line-height: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button::after {
+  border: none;
+}
+
+button[disabled] {
+  color: inherit;
+}
+
 /* Common Layout */
 .container {
   padding: 24rpx;

@@ -127,7 +127,6 @@
         </view>
       </view>
     </view>
-  </block>
 
     <!-- Messages -->
     <view class="detail-card">
@@ -155,56 +154,57 @@
       </view>
     </view>
 
-  <!-- Action Buttons -->
-  <view class="action-bar safe-bottom" wx:if="{{ticket && !loading}}">
-    <!-- Draft -->
-    <block wx:if="{{ticket.status === 'draft'}}">
-      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleSubmitTicket">提交审核</view>
-    </block>
+    <!-- Action Buttons -->
+    <view class="action-bar safe-bottom" wx:if="{{!loading}}">
+      <!-- Draft -->
+      <block wx:if="{{ticket.status === 'draft'}}">
+        <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleSubmitTicket">提交审核</view>
+      </block>
 
-    <!-- Pending Review -->
-    <block wx:elif="{{ticket.status === 'pending_review'}}">
-      <view class="btn btn-default btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleWithdraw">撤回</view>
-      <view class="btn btn-danger btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAuditReject">驳回</view>
-      <view class="btn btn-success btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAuditApprove">通过</view>
-      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleAssign">指派</view>
-    </block>
+      <!-- Pending Review -->
+      <block wx:elif="{{ticket.status === 'pending_review'}}">
+        <view class="btn btn-default btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleWithdraw">撤回</view>
+        <view class="btn btn-danger btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAuditReject">驳回</view>
+        <view class="btn btn-success btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleAuditApprove">通过</view>
+        <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleAssign">指派</view>
+      </block>
 
-    <!-- Rejected: re-edit and resubmit -->
-    <block wx:elif="{{ticket.status === 'rejected'}}">
-      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleSubmitTicket">重新提交审核</view>
-    </block>
+      <!-- Rejected: re-edit and resubmit -->
+      <block wx:elif="{{ticket.status === 'rejected'}}">
+        <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleSubmitTicket">重新提交审核</view>
+      </block>
 
-    <!-- Approved: assign -->
-    <block wx:elif="{{ticket.status === 'approved' || ticket.status === 'pending_assign'}}">
-      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleAssign">指派</view>
-    </block>
+      <!-- Approved: assign -->
+      <block wx:elif="{{ticket.status === 'approved' || ticket.status === 'pending_assign'}}">
+        <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="handleAssign">指派</view>
+      </block>
 
-    <!-- Assigned: start / transfer / re-assign -->
-    <block wx:elif="{{ticket.status === 'assigned'}}">
-      <view class="btn btn-primary btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
-      <view class="btn btn-outline btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
-      <view class="btn btn-warning btn-sm" style="flex:1;" bindtap="handleAssign">重新指派</view>
-    </block>
+      <!-- Assigned: start / transfer / re-assign -->
+      <block wx:elif="{{ticket.status === 'assigned'}}">
+        <view class="btn btn-primary btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
+        <view class="btn btn-outline btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
+        <view class="btn btn-warning btn-sm" style="flex:1;" bindtap="handleAssign">重新指派</view>
+      </block>
 
-    <!-- Processing -->
-    <block wx:elif="{{ticket.status === 'processing'}}">
-      <view class="btn btn-outline btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
-      <view class="btn btn-success btn-sm" style="flex:1;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
-    </block>
+      <!-- Processing -->
+      <block wx:elif="{{ticket.status === 'processing'}}">
+        <view class="btn btn-outline btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
+        <view class="btn btn-success btn-sm" style="flex:1;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
+      </block>
 
-    <!-- Transferred: re-transfer / process / complete -->
-    <block wx:elif="{{ticket.status === 'transferred'}}">
-      <view class="btn btn-primary btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
-      <view class="btn btn-success btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
-      <view class="btn btn-outline btn-sm" style="flex:1;" bindtap="handleTransfer">再次转派</view>
-    </block>
+      <!-- Transferred: re-transfer / process / complete -->
+      <block wx:elif="{{ticket.status === 'transferred'}}">
+        <view class="btn btn-primary btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
+        <view class="btn btn-success btn-sm" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
+        <view class="btn btn-outline btn-sm" style="flex:1;" bindtap="handleTransfer">再次转派</view>
+      </block>
 
-    <!-- Completed: admin can revert -->
-    <block wx:elif="{{ticket.status === 'completed'}}">
-      <view class="btn btn-warning btn-sm" style="flex:1;" bindtap="handleRevertToReview">打回重审</view>
-    </block>
-  </view>
+      <!-- Completed: admin can revert -->
+      <block wx:elif="{{ticket.status === 'completed'}}">
+        <view class="btn btn-warning btn-sm" style="flex:1;" bindtap="handleRevertToReview">打回重审</view>
+      </block>
+    </view>
+  </block>
 
   <!-- Remark Modal -->
   <view class="modal-mask" wx:if="{{showRemarkModal}}" bindtap="closeRemarkModal"></view>

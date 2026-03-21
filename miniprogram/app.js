@@ -1,4 +1,5 @@
-const { getToken } = require('./utils/auth')
+const { getToken, clearAuth } = require('./utils/auth')
+const { get } = require('./utils/request')
 
 App({
   onLaunch() {
@@ -18,7 +19,19 @@ App({
       })
       return false
     }
+    // Validate token by calling a lightweight endpoint
+    this.validateToken()
     return true
+  },
+
+  async validateToken() {
+    try {
+      await get('/base/userinfo', {}, { showLoading: false })
+    } catch (err) {
+      // If 401, the request interceptor already handles redirect
+      // For other errors, token might still be valid (e.g., network issue)
+      console.warn('Token validation failed:', err)
+    }
   },
 
   getUserInfo() {

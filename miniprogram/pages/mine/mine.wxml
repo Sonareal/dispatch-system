@@ -46,6 +46,75 @@
     </picker>
   </view>
 
+  <!-- WeChat Binding Section -->
+  <view class="menu-section">
+    <view class="menu-title">微信绑定</view>
+
+    <view class="menu-item" wx:if="{{wxBound}}">
+      <view class="menu-left">
+        <text class="menu-icon wx-icon-green">&#xe60e;</text>
+        <text class="menu-label">微信账号</text>
+      </view>
+      <view class="menu-right">
+        <text class="wx-bound-tag">已绑定</text>
+        <text class="menu-value">{{wxOpenid.length > 8 ? wxOpenid.substring(0, 4) + '****' + wxOpenid.substring(wxOpenid.length - 4) : wxOpenid}}</text>
+      </view>
+    </view>
+
+    <view class="menu-item" wx:else bindtap="handleBindWechat">
+      <view class="menu-left">
+        <text class="menu-icon">&#xe60e;</text>
+        <text class="menu-label">绑定微信</text>
+      </view>
+      <view class="menu-right">
+        <text class="wx-bind-btn">{{wxBindLoading ? '绑定中...' : '去绑定'}}</text>
+        <text class="menu-arrow">&#x276F;</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Notification Settings -->
+  <view class="menu-section">
+    <view class="menu-title">通知设置</view>
+
+    <view class="menu-item" bindtap="onNotifyToggle" data-field="notifyNewTicket">
+      <view class="menu-left">
+        <text class="menu-icon">&#x1F4E9;</text>
+        <text class="menu-label">新工单通知</text>
+      </view>
+      <view class="menu-right">
+        <view class="toggle-switch {{notifyNewTicket ? 'toggle-on' : ''}}">
+          <view class="toggle-dot"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="menu-item" bindtap="onNotifyToggle" data-field="notifyStatusChange">
+      <view class="menu-left">
+        <text class="menu-icon">&#x1F504;</text>
+        <text class="menu-label">状态变更通知</text>
+      </view>
+      <view class="menu-right">
+        <view class="toggle-switch {{notifyStatusChange ? 'toggle-on' : ''}}">
+          <view class="toggle-dot"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="menu-item" bindtap="onNotifyToggle" data-field="notifyMessage">
+      <view class="menu-left">
+        <text class="menu-icon">&#x1F4AC;</text>
+        <text class="menu-label">消息通知</text>
+      </view>
+      <view class="menu-right">
+        <view class="toggle-switch {{notifyMessage ? 'toggle-on' : ''}}">
+          <view class="toggle-dot"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- System Section -->
   <view class="menu-section">
     <view class="menu-title">系统</view>
 

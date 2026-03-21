@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <!-- Left visual panel - Horse/黑马 themed -->
-    <div class="login-visual" hidden md:flex>
+    <div class="login-visual">
       <div class="visual-content">
         <!-- Horse silhouette background - emoji 🐎 style -->
         <div class="horse-bg">
@@ -395,6 +395,9 @@ async function handleLogin() {
 }
 
 @media (max-width: 768px) {
+  .login-visual {
+    display: none;
+  }
   .login-form-panel {
     width: 100%;
     min-width: auto;

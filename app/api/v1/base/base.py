@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import APIRouter
 
 from app.controllers.user import user_controller
@@ -124,3 +125,113 @@ async def update_user_password(req_in: UpdatePassword):
     user.password = get_password_hash(req_in.new_password)
     await user.save()
     return Success(msg="修改成功")
+
+
+@router.post("/wx_login", summary="微信小程序登录")
+async def wx_login(req_in: WxLoginSchema):
+    """
+    微信小程序登录：通过 wx.login 获取的 code 换取 openid，
+    如果用户存在则返回 token，不存在则自动创建用户。
+    """
+    appid = settings.WECHAT_APPID
+    secret = settings.WECHAT_SECRET
+
+    if not appid or not secret:
+        return Fail(msg="微信登录未配置，请联系管理员")
+
+    # 调用微信 jscode2session 接口
+    wx_url = (
+        f"https://api.weixin.qq.com/sns/jscode2session"
+        f"?appid={appid}&secret={secret}&js_code={req_in.code}&grant_type=authorization_code"
+    )
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(wx_url, timeout=10)
+    wx_data = resp.json()
+
+    openid = wx_data.get("openid")
+    if not openid:
+        errcode = wx_data.get("errcode", "")
+        errmsg = wx_data.get("errmsg", "未知错误")
+        return Fail(msg=f"微信登录失败: {errcode} {errmsg}")
+
+    session_key = wx_data.get("session_key", "")
+    unionid = wx_data.get("unionid")
+
+    # 查找或创建用户
+    user = await User.filter(openid=openid).first()
+    if not user:
+        # 自动创建新用户
+        username = f"wx_{openid[-8:]}"
+        # 确保用户名不重复
+        exists = await User.filter(username=username).first()
+        if exists:
+            username = f"wx_{openid[-12:]}"
+        user = User(
+            username=username,
+            openid=openid,
+            unionid=unionid,
+            alias=req_in.nickname or "",
+            avatar=req_in.avatar_url or "",
+            email=f"{username}@wx.placeholder",
+            is_active=True,
+        )
+        await user.save()
+    else:
+        # 更新用户信息（如果提供了）
+        updated = False
+        if req_in.nickname and not user.alias:
+            user.alias = req_in.nickname
+            updated = True
+        if req_in.avatar_url and not user.avatar:
+            user.avatar = req_in.avatar_url
+            updated = True
+        if unionid and not user.unionid:
+            user.unionid = unionid
+            updated = True
+        if updated:
+            await user.save()
+
+    # 生成 JWT token
+    await user_controller.update_last_login(user.id)
+    access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + access_token_expires
+    data = JWTOut(
+        access_token=create_access_token(
+            data=JWTPayload(
+                user_id=user.id,
+                username=user.username,
+                is_superuser=user.is_superuser,
+                exp=expire,
+            )
+        ),
+        username=user.username,
+    )
+    return Success(data=data.model_dump())
+
+
+@router.post("/wx_binduser", summary="绑定微信账号", dependencies=[DependAuth])
+async def wx_bind_user(req_in: WxBindSchema):
+    """
+    已登录用户绑定微信 openid（管理员创建的账号后续绑定微信）
+    """
+    user_id = CTX_USER_ID.get()
+    user = await user_controller.get(id=user_id)
+
+    # 检查该 openid 是否已被其他用户绑定
+    existing = await User.filter(openid=req_in.openid).first()
+    if existing and existing.id != user.id:
+        return Fail(msg="该微信号已被其他账号绑定")
+
+    user.openid = req_in.openid
+    await user.save()
+    return Success(msg="绑定成功")
+
+
+@router.get("/wx_bindstatus", summary="查询微信绑定状态", dependencies=[DependAuth])
+async def wx_bind_status():
+    """
+    查询当前登录用户是否已绑定微信
+    """
+    user_id = CTX_USER_ID.get()
+    user = await user_controller.get(id=user_id)
+    return Success(data={"is_bound": bool(user.openid), "openid": user.openid or ""})

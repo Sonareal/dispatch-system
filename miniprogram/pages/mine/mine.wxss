@@ -91,6 +91,10 @@
   text-align: center;
 }
 
+.menu-icon.wx-icon-green {
+  color: #07c160;
+}
+
 .menu-label {
   font-size: 28rpx;
   color: #333333;
@@ -110,6 +114,52 @@
 .menu-arrow {
   font-size: 24rpx;
   color: #cccccc;
+}
+
+/* WeChat Binding */
+.wx-bound-tag {
+  font-size: 22rpx;
+  color: #07c160;
+  background-color: #e8f8ef;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+}
+
+.wx-bind-btn {
+  font-size: 26rpx;
+  color: #1976d2;
+  margin-right: 8rpx;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  width: 88rpx;
+  height: 48rpx;
+  border-radius: 24rpx;
+  background-color: #e0e0e0;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-switch.toggle-on {
+  background-color: #07c160;
+}
+
+.toggle-dot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background-color: #ffffff;
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch.toggle-on .toggle-dot {
+  transform: translateX(40rpx);
 }
 
 /* Logout */

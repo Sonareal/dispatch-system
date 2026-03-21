@@ -2,21 +2,41 @@
   <!-- Header -->
   <view class="login-header">
     <view class="login-logo">
-      <text class="logo-icon">&#xe600;</text>
+      <text class="logo-text">HM</text>
     </view>
     <text class="login-title">派单管理系统</text>
     <text class="login-subtitle">Dispatch Management System</text>
+  </view>
+
+  <!-- WeChat Login Button -->
+  <view class="wx-login-section">
+    <button
+      class="wx-login-btn {{wxLoading ? 'loading' : ''}}"
+      bindtap="handleWxLogin"
+      disabled="{{wxLoading}}"
+    >
+      <text class="wx-icon-text">W</text>
+      <text>{{wxLoading ? '登录中...' : '微信一键登录'}}</text>
+    </button>
+  </view>
+
+  <!-- Separator -->
+  <view class="login-separator">
+    <view class="separator-line"></view>
+    <text class="separator-text">或使用账号密码登录</text>
+    <view class="separator-line"></view>
   </view>
 
   <!-- Form -->
   <view class="login-form">
     <view class="form-item">
       <view class="input-wrap">
-        <text class="input-icon">&#x1F464;</text>
+        <text class="input-icon-text">U</text>
         <input
           class="login-input"
+          type="text"
           placeholder="请输入用户名"
-          placeholder-class="placeholder"
+          placeholder-style="color: rgba(255,255,255,0.5);"
           value="{{username}}"
           bindinput="onUsernameInput"
           maxlength="30"
@@ -26,11 +46,12 @@
 
     <view class="form-item">
       <view class="input-wrap">
-        <text class="input-icon">&#x1F512;</text>
+        <text class="input-icon-text">P</text>
         <input
           class="login-input"
+          type="text"
           placeholder="请输入密码"
-          placeholder-class="placeholder"
+          placeholder-style="color: rgba(255,255,255,0.5);"
           password="{{!showPassword}}"
           value="{{password}}"
           bindinput="onPasswordInput"

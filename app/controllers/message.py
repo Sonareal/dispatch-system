@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from tortoise.expressions import Q
@@ -6,6 +7,10 @@ from app.core.crud import CRUDBase
 from app.models.admin import CallRecord, MessageRecord, User
 from app.models.enums import CallStatus, MessageType
 from app.schemas.messages import CallCreate, MessageCreate
+from app.settings import settings
+from app.utils.wechat import send_subscribe_message
+
+logger = logging.getLogger(__name__)
 
 
 class MessageController(CRUDBase[MessageRecord, MessageCreate, dict]):
@@ -17,7 +22,41 @@ class MessageController(CRUDBase[MessageRecord, MessageCreate, dict]):
         data["sender_id"] = sender_id
         msg = MessageRecord(**data)
         await msg.save()
+
+        # 尝试发送微信订阅通知给接收人
+        await self._try_send_wx_notification(msg, sender_id)
+
         return msg
+
+    async def _try_send_wx_notification(self, msg: MessageRecord, sender_id: int):
+        """如果接收人绑定了微信 openid，尝试发送订阅消息通知"""
+        template_id = settings.WECHAT_SUBSCRIBE_TEMPLATE_ID
+        if not template_id or not msg.receiver_id:
+            return
+
+        try:
+            receiver = await User.filter(id=msg.receiver_id).first()
+            if not receiver or not receiver.openid:
+                return
+
+            sender = await User.filter(id=sender_id).first()
+            sender_name = (sender.alias or sender.username) if sender else "系统"
+
+            # 构造订阅消息模板数据
+            wx_data = {
+                "name1": {"value": sender_name},
+                "thing2": {"value": (msg.content or "您收到一条新消息")[:20]},
+            }
+            page = f"pages/message/detail?ticket_id={msg.ticket_id}" if msg.ticket_id else ""
+
+            await send_subscribe_message(
+                openid=receiver.openid,
+                template_id=template_id,
+                data=wx_data,
+                page=page,
+            )
+        except Exception as e:
+            logger.error(f"发送微信订阅通知失败: {e}")
 
     async def get_ticket_messages(self, ticket_id: int, user_id: int = None):
         q = Q(ticket_id=ticket_id)

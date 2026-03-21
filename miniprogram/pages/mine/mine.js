@@ -1,19 +1,29 @@
-const { get, put } = require('../../utils/request')
+const { get, post, put } = require('../../utils/request')
 const { getUserInfo, setUserInfo, clearAuth, isLoggedIn } = require('../../utils/auth')
 
 Page({
   data: {
     userInfo: null,
     cityText: '',
-    loading: false
+    loading: false,
+    // WeChat binding
+    wxBound: false,
+    wxOpenid: '',
+    wxBindLoading: false,
+    // Notification settings
+    notifyNewTicket: true,
+    notifyStatusChange: true,
+    notifyMessage: true
   },
 
   onLoad() {
     this.loadUserInfo()
+    this.loadNotificationSettings()
   },
 
   onShow() {
     this.loadUserInfo()
+    this.fetchWxBindStatus()
   },
 
   loadUserInfo() {
@@ -46,6 +56,96 @@ Page({
     }
   },
 
+  // === WeChat Binding ===
+  async fetchWxBindStatus() {
+    try {
+      const res = await get('/base/wx_bindstatus', {}, { showLoading: false })
+      const data = res.data || res
+      this.setData({
+        wxBound: !!data.bound,
+        wxOpenid: data.openid || ''
+      })
+    } catch (err) {
+      console.error('Failed to fetch wx bind status:', err)
+    }
+  },
+
+  async handleBindWechat() {
+    if (this.data.wxBindLoading) return
+    this.setData({ wxBindLoading: true })
+
+    try {
+      // Get WeChat login code first
+      const loginRes = await new Promise((resolve, reject) => {
+        wx.login({
+          success: resolve,
+          fail: reject
+        })
+      })
+
+      if (!loginRes.code) {
+        wx.showToast({ title: '获取微信信息失败', icon: 'none' })
+        this.setData({ wxBindLoading: false })
+        return
+      }
+
+      // Call backend to bind
+      const res = await post('/base/wx_binduser', {
+        openid: loginRes.code
+      })
+
+      wx.showToast({ title: '绑定成功', icon: 'success' })
+      this.fetchWxBindStatus()
+    } catch (err) {
+      console.error('WeChat binding failed:', err)
+    } finally {
+      this.setData({ wxBindLoading: false })
+    }
+  },
+
+  maskOpenid(openid) {
+    if (!openid || openid.length < 8) return openid || ''
+    return openid.substring(0, 4) + '****' + openid.substring(openid.length - 4)
+  },
+
+  // === Notification Settings ===
+  loadNotificationSettings() {
+    try {
+      const settings = wx.getStorageSync('notification_settings')
+      if (settings) {
+        const parsed = JSON.parse(settings)
+        this.setData({
+          notifyNewTicket: parsed.notifyNewTicket !== false,
+          notifyStatusChange: parsed.notifyStatusChange !== false,
+          notifyMessage: parsed.notifyMessage !== false
+        })
+      }
+    } catch (e) {
+      console.error('Failed to load notification settings:', e)
+    }
+  },
+
+  onNotifyToggle(e) {
+    const field = e.currentTarget.dataset.field
+    const newValue = !this.data[field]
+    this.setData({ [field]: newValue })
+    this.saveNotificationSettings()
+  },
+
+  saveNotificationSettings() {
+    try {
+      const settings = {
+        notifyNewTicket: this.data.notifyNewTicket,
+        notifyStatusChange: this.data.notifyStatusChange,
+        notifyMessage: this.data.notifyMessage
+      }
+      wx.setStorageSync('notification_settings', JSON.stringify(settings))
+    } catch (e) {
+      console.error('Failed to save notification settings:', e)
+    }
+  },
+
+  // === Existing methods ===
   onCityChange(e) {
     const value = e.detail.value
     const province = value[0] || ''

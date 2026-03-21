@@ -92,5 +92,10 @@ class Settings(BaseSettings):
     }
     DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 
+    # WeChat Mini Program
+    WECHAT_APPID: str = os.environ.get("WECHAT_APPID", "")
+    WECHAT_SECRET: str = os.environ.get("WECHAT_SECRET", "")
+    WECHAT_SUBSCRIBE_TEMPLATE_ID: str = os.environ.get("WECHAT_SUBSCRIBE_TEMPLATE_ID", "")
+
 
 settings = Settings()
