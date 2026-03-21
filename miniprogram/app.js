@@ -8,7 +8,7 @@ App({
 
   globalData: {
     userInfo: null,
-    baseUrl: 'http://localhost:9999/api/v1'
+    baseUrl: 'https://168heima.cn/api/v1'
   },
 
   checkLogin() {

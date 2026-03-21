@@ -1,6 +1,6 @@
 const { getToken, clearAuth } = require('./auth')
 
-const BASE_URL = 'http://localhost:9999/api/v1'
+const BASE_URL = 'https://168heima.cn/api/v1'
 
 function request(options) {
   const {
