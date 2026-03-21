@@ -173,9 +173,23 @@
 .action-icon-green { background-color: #19be6b; }
 .action-icon-purple { background-color: #7c4dff; }
 
+.action-icon-text {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
 .action-text {
   font-size: 24rpx;
   color: #666666;
+}
+
+.notification-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background-color: #ff4d4f;
+  margin-right: 12rpx;
 }
 
 /* Ticket Item */

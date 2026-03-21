@@ -21,9 +21,9 @@
       <text class="stat-num stat-blue">{{stats.processing}}</text>
       <text class="stat-label">处理中</text>
     </view>
-    <view class="stat-card" bindtap="navigateToList" data-status="inspecting">
-      <text class="stat-num stat-purple">{{stats.inspecting}}</text>
-      <text class="stat-label">验车中</text>
+    <view class="stat-card" bindtap="navigateToList" data-status="assigned">
+      <text class="stat-num stat-purple">{{stats.assigned}}</text>
+      <text class="stat-label">已指派</text>
     </view>
     <view class="stat-card" bindtap="navigateToList" data-status="completed">
       <text class="stat-num stat-green">{{stats.completed}}</text>
@@ -37,7 +37,7 @@
 
   <!-- Notification Banner -->
   <view class="notification-bar" wx:if="{{unreadCount > 0}}" bindtap="navigateToNotifications">
-    <text class="notification-icon">&#x1F514;</text>
+    <text class="notification-dot"></text>
     <text class="notification-text">您有 {{unreadCount}} 条未读消息</text>
     <text class="notification-arrow">></text>
   </view>
@@ -49,19 +49,27 @@
     </view>
     <view class="action-grid">
       <view class="action-item" bindtap="navigateToCreate">
-        <view class="action-icon action-icon-blue">+</view>
+        <view class="action-icon action-icon-blue">
+          <text class="action-icon-text">+</text>
+        </view>
         <text class="action-text">新建工单</text>
       </view>
       <view class="action-item" bindtap="navigateToList" data-status="pending_review">
-        <view class="action-icon action-icon-orange">&#x2713;</view>
+        <view class="action-icon action-icon-orange">
+          <text class="action-icon-text">审</text>
+        </view>
         <text class="action-text">待审核</text>
       </view>
       <view class="action-item" bindtap="navigateToList" data-status="processing">
-        <view class="action-icon action-icon-green">&#x21BB;</view>
+        <view class="action-icon action-icon-green">
+          <text class="action-icon-text">处</text>
+        </view>
         <text class="action-text">处理中</text>
       </view>
       <view class="action-item" bindtap="navigateToTickets">
-        <view class="action-icon action-icon-purple">&#x2630;</view>
+        <view class="action-icon action-icon-purple">
+          <text class="action-icon-text">全</text>
+        </view>
         <text class="action-text">全部工单</text>
       </view>
     </view>
@@ -93,7 +101,7 @@
         <view class="ticket-header">
           <text class="ticket-no">{{item.ticket_no || ('工单#' + item.id)}}</text>
           <text class="tag tag-{{item.status === 'pending_review' ? 'orange' : item.status === 'processing' ? 'blue' : item.status === 'completed' ? 'green' : item.status === 'rejected' ? 'red' : 'grey'}}">
-            {{item.status === 'pending_review' ? '待审核' : item.status === 'processing' ? '处理中' : item.status === 'completed' ? '已完成' : item.status === 'rejected' ? '已驳回' : item.status === 'inspecting' ? '验车中' : item.status === 'cancelled' ? '已取消' : item.status}}
+            {{item.status === 'draft' ? '草稿' : item.status === 'pending_review' ? '待审核' : item.status === 'approved' ? '已审核' : item.status === 'assigned' ? '已指派' : item.status === 'processing' ? '处理中' : item.status === 'completed' ? '已完成' : item.status === 'rejected' ? '已驳回' : item.status === 'transferred' ? '已转派' : item.status === 'closed' ? '已关闭' : item.status}}
           </text>
         </view>
         <view class="ticket-info">

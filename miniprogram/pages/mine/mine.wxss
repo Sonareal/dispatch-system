@@ -1,6 +1,7 @@
 .page-mine {
   min-height: 100vh;
   background-color: #f5f6f7;
+  padding-bottom: 40rpx;
 }
 
 /* Profile Header */
@@ -57,8 +58,10 @@
 /* Menu Section */
 .menu-section {
   background-color: #ffffff;
-  margin: 20rpx 0;
-  padding: 0 30rpx;
+  margin: 20rpx 24rpx;
+  padding: 0 24rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
 .menu-title {
@@ -71,7 +74,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28rpx 0;
+  padding: 24rpx 0;
   border-bottom: 1rpx solid #f5f6f7;
 }
 
@@ -84,16 +87,30 @@
   align-items: center;
 }
 
-.menu-icon {
-  font-size: 32rpx;
-  margin-right: 16rpx;
-  width: 40rpx;
-  text-align: center;
+/* Icon box design */
+.menu-icon-box {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
 }
 
-.menu-icon.wx-icon-green {
-  color: #07c160;
+.menu-icon-char {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #ffffff;
 }
+
+.menu-icon-blue { background-color: #1976d2; }
+.menu-icon-green { background-color: #2e7d32; }
+.menu-icon-orange { background-color: #ed6c02; }
+.menu-icon-red { background-color: #d32f2f; }
+.menu-icon-purple { background-color: #7b1fa2; }
+.menu-icon-wx { background-color: #07c160; }
+.menu-icon-grey { background-color: #757575; }
 
 .menu-label {
   font-size: 28rpx;
@@ -132,37 +149,25 @@
   margin-right: 8rpx;
 }
 
-/* Toggle Switch */
-.toggle-switch {
-  width: 88rpx;
-  height: 48rpx;
-  border-radius: 24rpx;
-  background-color: #e0e0e0;
-  position: relative;
-  transition: background-color 0.3s ease;
-}
-
-.toggle-switch.toggle-on {
-  background-color: #07c160;
-}
-
-.toggle-dot {
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background-color: #ffffff;
-  position: absolute;
-  top: 4rpx;
-  left: 4rpx;
-  transition: transform 0.3s ease;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
-}
-
-.toggle-switch.toggle-on .toggle-dot {
-  transform: translateX(40rpx);
-}
-
 /* Logout */
 .logout-section {
-  padding: 60rpx 40rpx 40rpx;
+  padding: 40rpx 40rpx 40rpx;
+}
+
+.logout-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  background-color: #ffffff;
+  color: #d32f2f;
+  font-size: 30rpx;
+  font-weight: 500;
+  border-radius: 16rpx;
+  border: 2rpx solid #ffcdd2;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.logout-btn:active {
+  background-color: #ffebee;
 }

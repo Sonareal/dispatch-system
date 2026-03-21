@@ -23,7 +23,7 @@
         </view>
         <view class="info-item" bindtap="makePhoneCall">
           <text class="info-label">联系电话</text>
-          <text class="info-value text-primary">{{ticket.customer_phone || '-'}} &#x260E;</text>
+          <text class="info-value text-primary">{{ticket.customer_phone || '-'}} [拨打]</text>
         </view>
         <view class="info-item">
           <text class="info-label">身份证号</text>

@@ -2,7 +2,7 @@
   <!-- Search Bar -->
   <view class="search-bar">
     <view class="search-wrap">
-      <text class="search-icon">&#x1F50D;</text>
+      <text class="search-icon">Q</text>
       <input
         class="search-input"
         placeholder="搜索客户姓名/工单号"
@@ -12,7 +12,7 @@
         bindconfirm="onSearch"
         confirm-type="search"
       />
-      <text wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">&#x2715;</text>
+      <text wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">X</text>
     </view>
   </view>
 

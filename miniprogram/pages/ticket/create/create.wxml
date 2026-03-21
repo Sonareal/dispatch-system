@@ -73,7 +73,7 @@
       >
         <view class="picker-value {{form.repayment_method ? '' : 'placeholder'}}">
           {{form.repayment_method || '请选择还款方式'}}
-          <text class="picker-arrow">&#x25BC;</text>
+          <text class="picker-arrow">v</text>
         </view>
       </picker>
     </view>
@@ -102,7 +102,7 @@
       >
         <view class="picker-value {{cityText ? '' : 'placeholder'}}">
           {{cityText || '请选择省/市/区'}}
-          <text class="picker-arrow">&#x25BC;</text>
+          <text class="picker-arrow">v</text>
         </view>
       </picker>
     </view>
