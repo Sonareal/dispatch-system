@@ -127,6 +127,26 @@ async def update_user_password(req_in: UpdatePassword):
     return Success(msg="修改成功")
 
 
+@router.post("/update_profile", summary="更新个人信息", dependencies=[DependAuth])
+async def update_profile(data: dict):
+    """小程序端更新用户个人信息"""
+    user_id = CTX_USER_ID.get()
+    user = await user_controller.get(id=user_id)
+    # Only update fields that exist on the User model
+    if "alias" in data and data["alias"]:
+        user.alias = data["alias"]
+    if "phone" in data and data["phone"]:
+        user.phone = data["phone"]
+    # Store city info as default_city_id if a city name is provided
+    if "city" in data and data["city"]:
+        from app.models.admin import City
+        city = await City.filter(name__contains=data["city"]).first()
+        if city:
+            user.default_city_id = city.id
+    await user.save()
+    return Success(msg="更新成功")
+
+
 @router.post("/wx_login", summary="微信小程序登录")
 async def wx_login(req_in: WxLoginSchema):
     """

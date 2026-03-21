@@ -57,7 +57,7 @@
           <text class="info-value">{{ticket.repayment_method || '-'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">验车费</text>
+          <text class="info-label">查勘费</text>
           <text class="info-value">￥{{ticket.inspection_fee_fmt}}</text>
         </view>
         <view class="info-item">

@@ -79,10 +79,10 @@
     </view>
 
     <view class="form-group">
-      <view class="form-label">验车费（元）</view>
+      <view class="form-label">查勘费（元）</view>
       <input
         class="form-input"
-        placeholder="请输入验车费"
+        placeholder="请输入查勘费"
         type="digit"
         value="{{form.inspection_fee}}"
         data-field="inspection_fee"

@@ -1,4 +1,4 @@
-const { get, post, put } = require('../../utils/request')
+const { get, post } = require('../../utils/request')
 const { getUserInfo, setUserInfo, clearAuth, isLoggedIn } = require('../../utils/auth')
 
 Page({
@@ -41,7 +41,7 @@ Page({
 
   async fetchUserInfo() {
     try {
-      const res = await get('/auth/profile', {}, { showLoading: false })
+      const res = await get('/base/userinfo', {}, { showLoading: false })
       const user = res.data || res
       setUserInfo(user)
       getApp().setUserInfo(user)
@@ -62,7 +62,7 @@ Page({
       const res = await get('/base/wx_bindstatus', {}, { showLoading: false })
       const data = res.data || res
       this.setData({
-        wxBound: !!data.bound,
+        wxBound: !!(data.is_bound || data.bound),
         wxOpenid: data.openid || ''
       })
     } catch (err) {
@@ -160,16 +160,11 @@ Page({
 
   async updateCity(province, city, district) {
     try {
-      await put('/auth/profile', { province, city, district })
-
-      const userInfo = { ...this.data.userInfo, province, city, district }
-      setUserInfo(userInfo)
-      getApp().setUserInfo(userInfo)
-      this.setData({ userInfo })
-
+      await post('/base/update_profile', { city: city || province })
       wx.showToast({ title: '城市已更新', icon: 'success' })
     } catch (err) {
       console.error('Failed to update city:', err)
+      wx.showToast({ title: '更新失败', icon: 'none' })
     }
   },
 
