@@ -1,4 +1,4 @@
-const { post } = require('../../utils/request')
+const { get, post } = require('../../utils/request')
 const { setToken, setUserInfo } = require('../../utils/auth')
 
 Page({
@@ -122,6 +122,27 @@ Page({
       const data = res.data || res
       if (data.access_token) {
         setToken(data.access_token)
+      }
+
+      // Fetch user info (alias, id, roles, city etc.)
+      try {
+        const userRes = await get('/base/userinfo', {}, { showLoading: false })
+        if (userRes.data) {
+          const u = userRes.data
+          setUserInfo({
+            id: u.id,
+            username: u.username,
+            name: u.alias || u.username,
+            alias: u.alias,
+            phone: u.phone,
+            is_superuser: u.is_superuser,
+            default_city_id: u.default_city_id,
+            default_city_name: u.default_city_name,
+            role_names: u.role_names,
+          })
+        }
+      } catch (e) {
+        setUserInfo({ username: data.username, name: data.username })
       }
 
       wx.showToast({ title: '登录成功', icon: 'success' })

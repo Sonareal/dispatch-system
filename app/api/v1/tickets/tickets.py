@@ -512,6 +512,7 @@ async def ticket_statistics(city_id: int = Query(None, description="城市ID")):
         q &= Q(city_id=city_id)
 
     total = await OrderTicket.filter(q).count()
+    draft = await OrderTicket.filter(q & Q(status="draft")).count()
     pending_review = await OrderTicket.filter(q & Q(status="pending_review")).count()
     processing = await OrderTicket.filter(q & Q(status="processing")).count()
     completed = await OrderTicket.filter(q & Q(status="completed")).count()
@@ -520,6 +521,7 @@ async def ticket_statistics(city_id: int = Query(None, description="城市ID")):
 
     return Success(data={
         "total": total,
+        "draft": draft,
         "pending_review": pending_review,
         "processing": processing,
         "completed": completed,

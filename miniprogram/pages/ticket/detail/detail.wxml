@@ -221,8 +221,9 @@
 
     <!-- Action Buttons -->
     <view class="action-bar safe-bottom" wx:if="{{!loading}}">
-      <!-- Draft -->
+      <!-- Draft: edit + submit -->
       <block wx:if="{{ticket.status === 'draft'}}">
+        <view class="btn btn-default" style="flex:1; margin-right:16rpx;" bindtap="handleEditTicket">编辑工单</view>
         <view class="btn btn-primary" style="flex:1;" bindtap="handleSubmitTicket">提交审核</view>
       </block>
 
@@ -236,6 +237,7 @@
 
       <!-- Rejected: re-edit and resubmit -->
       <block wx:elif="{{ticket.status === 'rejected'}}">
+        <view class="btn btn-default" style="flex:1; margin-right:16rpx;" bindtap="handleEditTicket">编辑工单</view>
         <view class="btn btn-primary" style="flex:1;" bindtap="handleSubmitTicket">重新提交审核</view>
       </block>
 

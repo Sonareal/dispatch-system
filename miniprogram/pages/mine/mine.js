@@ -29,10 +29,9 @@ Page({
   loadUserInfo() {
     const userInfo = getUserInfo()
     if (userInfo) {
-      const cityParts = [userInfo.province, userInfo.city, userInfo.district].filter(Boolean)
       this.setData({
         userInfo,
-        cityText: cityParts.join(' ') || '未设置'
+        cityText: userInfo.default_city_name || '未设置'
       })
     } else if (isLoggedIn()) {
       this.fetchUserInfo()
@@ -43,13 +42,22 @@ Page({
     try {
       const res = await get('/base/userinfo', {}, { showLoading: false })
       const user = res.data || res
-      setUserInfo(user)
-      getApp().setUserInfo(user)
+      const info = {
+        id: user.id,
+        username: user.username,
+        name: user.alias || user.username,
+        alias: user.alias,
+        phone: user.phone,
+        is_superuser: user.is_superuser,
+        default_city_id: user.default_city_id,
+        default_city_name: user.default_city_name,
+        role_names: user.role_names,
+      }
+      setUserInfo(info)
 
-      const cityParts = [user.province, user.city, user.district].filter(Boolean)
       this.setData({
-        userInfo: user,
-        cityText: cityParts.join(' ') || '未设置'
+        userInfo: info,
+        cityText: user.default_city_name || '未设置'
       })
     } catch (err) {
       console.error('Failed to fetch user info:', err)
@@ -160,7 +168,12 @@ Page({
 
   async updateCity(province, city, district) {
     try {
-      await post('/base/update_profile', { city: city || province })
+      const cityName = city || province
+      await post('/base/update_profile', { city: cityName })
+      // Update local storage
+      const userInfo = getUserInfo() || {}
+      userInfo.default_city_name = cityName
+      setUserInfo(userInfo)
       wx.showToast({ title: '城市已更新', icon: 'success' })
     } catch (err) {
       console.error('Failed to update city:', err)

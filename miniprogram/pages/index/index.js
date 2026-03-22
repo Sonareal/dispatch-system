@@ -5,6 +5,7 @@ Page({
   data: {
     userInfo: null,
     stats: {
+      draft: 0,
       pending_review: 0,
       processing: 0,
       completed: 0,
@@ -100,6 +101,7 @@ Page({
 
       this.setData({
         stats: {
+          draft: stats.draft || 0,
           pending_review: stats.pending_review || 0,
           processing: stats.processing || 0,
           completed: stats.completed || 0,

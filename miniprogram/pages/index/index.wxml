@@ -13,6 +13,10 @@
 
   <!-- Stats Cards -->
   <view class="stats-grid">
+    <view class="stat-card" bindtap="navigateToList" data-status="draft">
+      <text class="stat-num stat-blue">{{stats.draft}}</text>
+      <text class="stat-label">草稿</text>
+    </view>
     <view class="stat-card" bindtap="navigateToList" data-status="pending_review">
       <text class="stat-num stat-orange">{{stats.pending_review}}</text>
       <text class="stat-label">待审核</text>

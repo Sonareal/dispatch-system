@@ -505,6 +505,14 @@ Page({
     }
   },
 
+  handleEditTicket() {
+    const ticket = this.data.ticket
+    if (!ticket) return
+    wx.navigateTo({
+      url: `/pages/ticket/create/create?edit_id=${ticket.id}`
+    })
+  },
+
   async handleSubmitTicket() {
     try {
       await post('/ticket/submit', { ticket_id: parseInt(this.data.id) })

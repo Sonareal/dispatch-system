@@ -67,6 +67,14 @@ async def get_userinfo():
         avatar_icon = "U"
     display_name = (user_obj.alias or user_obj.username or "U")[:2].upper()
     data["avatar"] = f"https://ui-avatars.com/api/?name={display_name}&background={avatar_color}&color=fff&size=128&bold=true&font-size=0.4"
+    # Add city name
+    if user_obj.default_city_id:
+        from app.models.admin import City
+        city = await City.filter(id=user_obj.default_city_id).first()
+        data["default_city_name"] = city.name if city else ""
+    else:
+        data["default_city_name"] = ""
+    data["role_names"] = [r.name for r in roles]
     return Success(data=data)
 
 
