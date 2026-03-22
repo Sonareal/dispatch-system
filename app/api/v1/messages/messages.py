@@ -6,7 +6,7 @@ from tortoise.expressions import Q
 
 from app.controllers.message import call_controller, message_controller
 from app.core.ctx import CTX_USER_ID
-from app.models.admin import CallRecord, MessageRecord, User
+from app.models.admin import CallRecord, MessageReadStatus, MessageRecord, User
 from app.models.enums import CallStatus
 from app.schemas.base import Success, SuccessExtra
 from app.schemas.messages import CallCreate, MessageCreate
@@ -38,11 +38,19 @@ async def list_all_messages(
     if sender_id is not None:
         q &= Q(sender_id=sender_id)
 
+    user_id = CTX_USER_ID.get()
     total = await MessageRecord.filter(q).count()
     objs = await MessageRecord.filter(q).offset((page - 1) * page_size).limit(page_size).order_by("-created_at")
+    # Get read status for current user
+    msg_ids = [msg.id for msg in objs]
+    read_ids = set()
+    if msg_ids:
+        read_records = await MessageReadStatus.filter(message_id__in=msg_ids, user_id=user_id)
+        read_ids = {r.message_id for r in read_records}
     data = []
     for msg in objs:
         d = await msg.to_dict()
+        d["is_read"] = msg.id in read_ids or msg.sender_id == user_id  # own messages are always "read"
         sender = await User.filter(id=msg.sender_id).first()
         d["sender_name"] = sender.alias or sender.username if sender else ""
         if msg.receiver_id:
@@ -61,25 +69,81 @@ async def get_ticket_messages(
     page_size: int = Query(50, description="每页数量"),
 ):
     user_id = CTX_USER_ID.get()
-    messages = await message_controller.get_ticket_messages(ticket_id, user_id)
-    total = len(messages)
+    objs = await MessageRecord.filter(ticket_id=ticket_id).order_by("created_at")
+    total = len(objs)
+
+    # Per-user read status
+    msg_ids = [m.id for m in objs]
+    read_ids = set()
+    if msg_ids:
+        read_records = await MessageReadStatus.filter(message_id__in=msg_ids, user_id=user_id)
+        read_ids = {r.message_id for r in read_records}
+
     start = (page - 1) * page_size
     end = start + page_size
-    return SuccessExtra(data=messages[start:end], total=total, page=page, page_size=page_size)
+    data = []
+    for msg in objs[start:end]:
+        d = await msg.to_dict()
+        d["is_read"] = msg.id in read_ids or msg.sender_id == user_id
+        d["is_mine"] = msg.sender_id == user_id
+        sender = await User.filter(id=msg.sender_id).first()
+        d["sender_name"] = sender.alias or sender.username if sender else ""
+        if msg.receiver_id:
+            receiver = await User.filter(id=msg.receiver_id).first()
+            d["receiver_name"] = receiver.alias or receiver.username if receiver else ""
+        else:
+            d["receiver_name"] = ""
+        data.append(d)
+
+    # Auto mark all received messages as read
+    unread_msg_ids = [m.id for m in objs if m.id not in read_ids and m.sender_id != user_id]
+    for mid in unread_msg_ids:
+        exists = await MessageReadStatus.filter(message_id=mid, user_id=user_id).exists()
+        if not exists:
+            await MessageReadStatus.create(message_id=mid, user_id=user_id)
+
+    return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
 
 
 @router.post("/mark_read", summary="标记消息已读")
 async def mark_messages_read(message_ids: list[int] = Body(..., description="消息ID列表")):
     user_id = CTX_USER_ID.get()
-    await message_controller.mark_as_read(message_ids, user_id)
+    for mid in message_ids:
+        exists = await MessageReadStatus.filter(message_id=mid, user_id=user_id).exists()
+        if not exists:
+            await MessageReadStatus.create(message_id=mid, user_id=user_id)
     return Success(msg="标记成功")
 
 
 @router.get("/unread_count", summary="获取未读消息数")
 async def get_unread_count():
     user_id = CTX_USER_ID.get()
-    count = await message_controller.get_unread_count(user_id)
-    return Success(data={"count": count})
+    # Messages where I'm the receiver (or receiver is null = broadcast) and I haven't read
+    my_messages = await MessageRecord.filter(
+        Q(receiver_id=user_id) | Q(receiver_id__isnull=True)
+    ).exclude(sender_id=user_id)
+    msg_ids = [m.id for m in my_messages]
+    if not msg_ids:
+        return Success(data={"count": 0})
+    read_count = await MessageReadStatus.filter(message_id__in=msg_ids, user_id=user_id).count()
+    unread = len(msg_ids) - read_count
+    return Success(data={"count": max(0, unread)})
+
+
+@router.post("/delete", summary="删除消息")
+async def delete_message(message_id: int = Body(..., embed=True, description="消息ID")):
+    user_id = CTX_USER_ID.get()
+    msg = await MessageRecord.filter(id=message_id).first()
+    if not msg:
+        return Success(msg="消息不存在", code=404)
+    # Check permission: sender can delete own, superuser can delete any
+    user = await User.filter(id=user_id).first()
+    if msg.sender_id != user_id and not (user and user.is_superuser):
+        return Success(msg="无权删除此消息", code=403)
+    await msg.delete()
+    # Also delete read statuses
+    await MessageReadStatus.filter(message_id=message_id).delete()
+    return Success(msg="删除成功")
 
 
 @router.post("/upload_voice", summary="上传语音消息")
@@ -87,10 +151,12 @@ async def upload_voice_message(
     file: UploadFile = File(...),
     ticket_id: str = Form(""),
     receiver_id: str = Form(""),
+    voice_duration: str = Form("0"),
 ):
     user_id = CTX_USER_ID.get()
     tid = int(ticket_id) if ticket_id else 0
     rid = int(receiver_id) if receiver_id else None
+    dur = int(voice_duration) if voice_duration and voice_duration != "0" else None
 
     upload_dir = os.path.join(settings.UPLOAD_DIR, "voice_messages")
     os.makedirs(upload_dir, exist_ok=True)
@@ -107,6 +173,7 @@ async def upload_voice_message(
 
     msg_in = MessageCreate(
         ticket_id=tid, receiver_id=rid, msg_type="voice", file_url=file_url,
+        voice_duration=dur,
     )
     msg = await message_controller.send_message(sender_id=user_id, obj_in=msg_in)
     return Success(msg="上传成功", data=await msg.to_dict())

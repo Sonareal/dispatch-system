@@ -213,6 +213,17 @@ class MessageRecord(BaseModel, TimestampMixin):
         table = "message_record"
 
 
+class MessageReadStatus(BaseModel, TimestampMixin):
+    """Per-user read status for messages"""
+    message_id = fields.IntField(description="消息ID", index=True)
+    user_id = fields.IntField(description="用户ID", index=True)
+    read_at = fields.DatetimeField(auto_now_add=True, description="已读时间")
+
+    class Meta:
+        table = "message_read_status"
+        unique_together = (("message_id", "user_id"),)
+
+
 class CallRecord(BaseModel, TimestampMixin):
     ticket_id = fields.IntField(description="工单ID", index=True)
     caller_id = fields.IntField(description="发起人ID", index=True)

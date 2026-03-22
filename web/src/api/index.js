@@ -97,6 +97,7 @@ export default {
   pushNotification: (data = {}) => request.post('/message/push', data),
   getMyNotifications: (params = {}) => request.get('/message/my_notifications', { params }),
   uploadVoiceMessage: (data) => request.post('/message/upload_voice', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deleteMessage: (message_id) => request.post('/message/delete', { message_id }),
 
   // === Calls ===
   initiateCall: (data = {}) => request.post('/message/call/initiate', data),

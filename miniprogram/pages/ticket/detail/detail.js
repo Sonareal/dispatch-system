@@ -31,6 +31,7 @@ Page({
     playingTimeText: '0:00',
     playingProgress: 0,
     playingDuration: 0,
+    playingTotalText: '',
   },
 
   onLoad(options) {
@@ -126,12 +127,13 @@ Page({
     const audioContext = wx.createInnerAudioContext()
 
     audioContext.onEnded(() => {
-      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingTimeText: '0:00' })
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingProgress: 0, playingTimeText: '0:00', playingTotalText: '', playingDuration: 0 })
     })
 
     audioContext.onError((err) => {
+      if (err && err.errMsg && err.errMsg.indexOf('audioInstance') !== -1) return
       console.error('Audio playback error:', err)
-      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingTimeText: '0:00' })
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingProgress: 0, playingTimeText: '0:00', playingTotalText: '', playingDuration: 0 })
       wx.showToast({ title: '播放失败', icon: 'none' })
     })
 
@@ -151,14 +153,18 @@ Page({
         playingTimeText: m + ':' + (s < 10 ? '0' : '') + s,
         playingProgress: progress,
       }
-      if (dur > 0 && !this.data.playingDuration) {
-        updates.playingDuration = Math.floor(dur)
+      if (dur > 0) {
+        const totalSec = Math.floor(dur)
+        if (!this.data.playingDuration || this.data.playingDuration !== totalSec) {
+          updates.playingDuration = totalSec
+          updates.playingTotalText = this._formatDurationText(totalSec)
+        }
       }
       this.setData(updates)
     })
 
     audioContext.onStop(() => {
-      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingTimeText: '0:00' })
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingProgress: 0, playingTimeText: '0:00', playingTotalText: '', playingDuration: 0 })
     })
 
     this._audioContext = audioContext
@@ -246,6 +252,7 @@ Page({
       formData: {
         ticket_id: String(this.data.id),
         receiver_id: String(ticket.assignee_id || ticket.submitter_id),
+        voice_duration: String(duration || 0),
       },
       header: {
         'token': token,
@@ -305,7 +312,11 @@ Page({
     const msg = this.data.messages.find(m => m.id === msgId)
     const dur = (msg && msg.voice_duration) || 0
 
-    this.setData({ playingMsgId: msgId, playingCurrentTime: 0, playingProgress: 0, playingTimeText: '0:00', playingDuration: dur })
+    this.setData({
+      playingMsgId: msgId, playingCurrentTime: 0, playingProgress: 0,
+      playingTimeText: '0:00', playingDuration: dur,
+      playingTotalText: dur > 0 ? this._formatDurationText(dur) : '',
+    })
     this._audioContext.src = fullUrl
     this._audioContext.play()
   },
@@ -362,6 +373,25 @@ Page({
     } catch (e) {
       console.error('Failed to fetch messages:', e)
     }
+  },
+
+  onDeleteMessage(e) {
+    const msgId = parseInt(e.currentTarget.dataset.id)
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这条消息吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            await post('/message/delete', { message_id: msgId })
+            wx.showToast({ title: '已删除', icon: 'success' })
+            this.fetchMessages()
+          } catch (err) {
+            console.error('Delete failed:', err)
+          }
+        }
+      }
+    })
   },
 
   onMsgInput(e) { this.setData({ msgContent: e.detail.value }) },

@@ -146,10 +146,16 @@
     <view class="detail-card">
       <view class="card-title">沟通记录</view>
       <view wx:if="{{messages.length > 0}}">
-        <view class="msg-item" wx:for="{{messages}}" wx:key="id">
+        <view class="msg-item {{item.is_read ? '' : 'msg-unread'}}" wx:for="{{messages}}" wx:key="id">
           <view class="msg-header">
-            <text class="msg-sender">{{item.sender_name}}</text>
-            <text class="msg-time">{{item.created_at}}</text>
+            <view style="display:flex;align-items:center;">
+              <text class="msg-sender">{{item.sender_name}}</text>
+              <text wx:if="{{!item.is_read}}" class="msg-unread-dot"></text>
+            </view>
+            <view style="display:flex;align-items:center;">
+              <text class="msg-time">{{item.created_at}}</text>
+              <text wx:if="{{item.is_mine}}" class="msg-delete-btn" catchtap="onDeleteMessage" data-id="{{item.id}}">删除</text>
+            </view>
           </view>
           <view class="msg-body">
             <text wx:if="{{item.msg_type === 'text'}}">{{item.content}}</text>
@@ -163,11 +169,11 @@
               </view>
               <view class="voice-progress-wrap">
                 <view class="voice-progress-bar">
-                  <view class="voice-progress-fill" style="width: {{playingMsgId === item.id ? playingProgress : 0}}%"></view>
+                  <view class="voice-progress-fill" style="width: {{playingMsgId === item.id ? playingProgress + '%' : '0%'}}"></view>
                 </view>
                 <view class="voice-time-row">
                   <text class="voice-time">{{playingMsgId === item.id ? playingTimeText : '0:00'}}</text>
-                  <text class="voice-time">{{item.durationText || ''}}</text>
+                  <text class="voice-time">{{playingMsgId === item.id && playingTotalText ? playingTotalText : (item.durationText || '')}}</text>
                 </view>
               </view>
             </view>

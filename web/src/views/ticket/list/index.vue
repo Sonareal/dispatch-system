@@ -164,6 +164,16 @@ async function viewDetail(ticketId) {
   loadMessages(ticketId)
 }
 
+async function handleDeleteMsg(msgId) {
+  try {
+    await api.deleteMessage(msgId)
+    window.$message?.success('已删除')
+    if (detailData.value) loadMessages(detailData.value.id)
+  } catch (e) {
+    window.$message?.error('删除失败')
+  }
+}
+
 function getFileUrl(url) {
   if (!url) return ''
   if (url.startsWith('http')) return url
@@ -606,10 +616,16 @@ const validateForm = computed(() => ({
 
           <NTabPane name="messages" :tab="t('views.ticket.tab_messages')">
             <div style="max-height: 300px; overflow-y: auto; padding: 10px 0;">
-              <div v-for="msg in ticketMessages" :key="msg.id" style="margin-bottom: 12px; padding: 8px 12px; background: #f9f9f9; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999;">
-                  <span><b>{{ msg.sender_name }}</b> → {{ msg.receiver_name || t('views.ticket.receiver_all') }}</span>
-                  <span>{{ msg.created_at }}</span>
+              <div v-for="msg in ticketMessages" :key="msg.id" style="margin-bottom: 12px; padding: 8px 12px; border-radius: 8px;" :style="{ background: msg.is_read ? '#f9f9f9' : '#eef6ff' }">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #999;">
+                  <span>
+                    <b>{{ msg.sender_name }}</b> → {{ msg.receiver_name || t('views.ticket.receiver_all') }}
+                    <NTag v-if="!msg.is_read" size="tiny" type="warning" style="margin-left: 4px;">未读</NTag>
+                  </span>
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    {{ msg.created_at }}
+                    <NButton v-if="msg.is_mine" text type="error" size="tiny" @click.stop="handleDeleteMsg(msg.id)">删除</NButton>
+                  </span>
                 </div>
                 <div style="margin-top: 4px;">
                   <!-- Voice message -->

@@ -203,6 +203,26 @@
   margin-bottom: 8rpx;
 }
 
+.msg-unread {
+  background-color: #eef6ff !important;
+}
+
+.msg-unread-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background-color: #ff4d4f;
+  margin-left: 8rpx;
+  flex-shrink: 0;
+}
+
+.msg-delete-btn {
+  font-size: 22rpx;
+  color: #ff4d4f;
+  margin-left: 12rpx;
+  padding: 4rpx 8rpx;
+}
+
 .msg-sender {
   font-size: 24rpx;
   font-weight: 500;
