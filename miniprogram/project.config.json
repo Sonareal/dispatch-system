@@ -8,6 +8,8 @@
     "bundle": false,
     "userConfirmedBundleSwitch": false,
     "urlCheck": false,
+    "checkInvalidKey": false,
+    "checkSiteMap": false,
     "scopeDataCheck": false,
     "coverView": true,
     "es6": true,

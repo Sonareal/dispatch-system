@@ -131,6 +131,7 @@ Page({
       }, 1000)
     } catch (err) {
       console.error('Login failed:', err)
+      wx.showToast({ title: '用户名或密码错误', icon: 'none', duration: 2000 })
     } finally {
       this.setData({ loading: false })
     }

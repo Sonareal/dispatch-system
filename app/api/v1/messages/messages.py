@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from fastapi import APIRouter, Body, File, Query, UploadFile
+from fastapi import APIRouter, Body, File, Form, Query, UploadFile
 from tortoise.expressions import Q
 
 from app.controllers.message import call_controller, message_controller
@@ -84,16 +84,19 @@ async def get_unread_count():
 
 @router.post("/upload_voice", summary="上传语音消息")
 async def upload_voice_message(
-    ticket_id: int,
-    receiver_id: int = None,
     file: UploadFile = File(...),
+    ticket_id: str = Form(""),
+    receiver_id: str = Form(""),
 ):
     user_id = CTX_USER_ID.get()
+    tid = int(ticket_id) if ticket_id else 0
+    rid = int(receiver_id) if receiver_id else None
+
     upload_dir = os.path.join(settings.UPLOAD_DIR, "voice_messages")
     os.makedirs(upload_dir, exist_ok=True)
 
     ext = os.path.splitext(file.filename)[1] if file.filename else ".mp3"
-    filename = f"vmsg_{ticket_id}_{os.urandom(4).hex()}{ext}"
+    filename = f"vmsg_{tid}_{os.urandom(4).hex()}{ext}"
     filepath = os.path.join(upload_dir, filename)
 
     content = await file.read()
@@ -103,7 +106,7 @@ async def upload_voice_message(
     file_url = f"/uploads/voice_messages/{filename}"
 
     msg_in = MessageCreate(
-        ticket_id=ticket_id, receiver_id=receiver_id, msg_type="voice", file_url=file_url,
+        ticket_id=tid, receiver_id=rid, msg_type="voice", file_url=file_url,
     )
     msg = await message_controller.send_message(sender_id=user_id, obj_in=msg_in)
     return Success(msg="上传成功", data=await msg.to_dict())
@@ -111,16 +114,18 @@ async def upload_voice_message(
 
 @router.post("/upload_image", summary="上传图片消息")
 async def upload_image_message(
-    ticket_id: int,
-    receiver_id: int = None,
     file: UploadFile = File(...),
+    ticket_id: str = Form(""),
+    receiver_id: str = Form(""),
 ):
     user_id = CTX_USER_ID.get()
+    tid = int(ticket_id) if ticket_id else 0
+    rid = int(receiver_id) if receiver_id else None
     upload_dir = os.path.join(settings.UPLOAD_DIR, "images")
     os.makedirs(upload_dir, exist_ok=True)
 
     ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
-    filename = f"img_{ticket_id}_{os.urandom(4).hex()}{ext}"
+    filename = f"img_{tid}_{os.urandom(4).hex()}{ext}"
     filepath = os.path.join(upload_dir, filename)
 
     content = await file.read()
@@ -130,7 +135,7 @@ async def upload_image_message(
     file_url = f"/uploads/images/{filename}"
 
     msg_in = MessageCreate(
-        ticket_id=ticket_id, receiver_id=receiver_id, msg_type="image", file_url=file_url,
+        ticket_id=tid, receiver_id=rid, msg_type="image", file_url=file_url,
     )
     msg = await message_controller.send_message(sender_id=user_id, obj_in=msg_in)
     return Success(msg="上传成功", data=await msg.to_dict())

@@ -65,7 +65,7 @@ class HttpAuditLogMiddleware(BaseHTTPMiddleware):
             try:
                 body = await request.json()
                 args.update(body)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 try:
                     body = await request.form()
                     # args.update(body)
@@ -174,7 +174,12 @@ class HttpAuditLogMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         start_time: datetime = datetime.now()
-        await self.before_request(request)
+        # Skip body parsing for excluded paths (uploads, static files)
+        should_skip = any(re.search(p, request.url.path, re.I) for p in self.exclude_paths)
+        if not should_skip:
+            await self.before_request(request)
+        else:
+            request.state.request_args = {}
         response = await call_next(request)
         end_time: datetime = datetime.now()
         process_time = int((end_time.timestamp() - start_time.timestamp()) * 1000)

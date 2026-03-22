@@ -183,7 +183,12 @@
       "placeholder_city": "请选择城市",
       "placeholder_region": "选择区域",
       "placeholder_salesman": "业务员",
-      "placeholder_inspection_fee": "考察费"
+      "placeholder_inspection_fee": "考察费",
+      "label_voice_message": "语音",
+      "label_image_message": "图片",
+      "action_send_voice": "发送语音",
+      "voice_upload_success": "语音发送成功",
+      "voice_upload_failed": "语音发送失败"
     },
     "audit": {
       "label_pending_review_list": "待审核列表",

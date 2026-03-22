@@ -147,11 +147,11 @@
 
   <!-- Action Buttons -->
   <view class="form-actions safe-bottom">
-    <view class="btn btn-default" style="flex: 1; margin-right: 20rpx;" bindtap="handleReset">
+    <view class="btn btn-lg btn-default" style="flex: 1; margin-right: 20rpx;" bindtap="handleReset">
       重置
     </view>
     <view
-      class="btn btn-primary"
+      class="btn btn-lg btn-primary"
       style="flex: 2;"
       bindtap="handleSubmit"
     >

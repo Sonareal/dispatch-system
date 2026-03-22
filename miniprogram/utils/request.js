@@ -1,6 +1,9 @@
 const { getToken, clearAuth } = require('./auth')
 
-const BASE_URL = 'https://168heima.cn/api/v1'
+// 生产环境（备案完成后切回域名）
+// const BASE_URL = 'https://168heima.cn/api/v1'
+// 临时用 IP 访问（开发者工具需勾选"不校验合法域名"）
+const BASE_URL = 'http://124.223.62.202:9999/api/v1'
 
 function request(options) {
   const {

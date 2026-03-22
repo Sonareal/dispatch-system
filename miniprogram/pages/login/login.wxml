@@ -11,7 +11,7 @@
   <!-- WeChat Login Button -->
   <view class="wx-login-section">
     <button
-      class="wx-login-btn {{wxLoading ? 'loading' : ''}}"
+      class="btn btn-lg wx-login-btn {{wxLoading ? 'loading' : ''}}"
       bindtap="handleWxLogin"
       disabled="{{wxLoading}}"
     >
@@ -64,7 +64,7 @@
     </view>
 
     <button
-      class="login-btn {{loading ? 'loading' : ''}}"
+      class="btn btn-lg login-btn {{loading ? 'loading' : ''}}"
       bindtap="handleLogin"
       disabled="{{loading}}"
     >

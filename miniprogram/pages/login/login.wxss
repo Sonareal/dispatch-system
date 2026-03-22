@@ -55,17 +55,11 @@
 
 .wx-login-btn {
   width: 100% !important;
-  height: 96rpx;
-  line-height: 96rpx;
   background-color: #07c160 !important;
   color: #ffffff !important;
-  font-size: 32rpx;
   font-weight: 600;
   border-radius: 16rpx !important;
   border: none !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   letter-spacing: 2rpx;
   padding: 0 !important;
   margin: 0 !important;
@@ -158,18 +152,12 @@
 /* Login Button */
 .login-btn {
   width: 100% !important;
-  height: 96rpx;
-  line-height: 96rpx;
   background-color: #ffffff !important;
   color: #1976d2 !important;
-  font-size: 34rpx;
   font-weight: 600;
   border-radius: 16rpx !important;
   border: none !important;
   margin-top: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   letter-spacing: 4rpx;
   padding: 0 !important;
   margin-left: 0 !important;

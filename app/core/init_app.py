@@ -3,6 +3,7 @@ import shutil
 from aerich import Command
 from fastapi import FastAPI
 from fastapi.middleware import Middleware
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from tortoise.expressions import Q
@@ -48,6 +49,7 @@ def make_middlewares():
                 "/api/v1/base/access_token",
                 "/docs",
                 "/openapi.json",
+                "/uploads",
             ],
         ),
     ]
@@ -66,8 +68,16 @@ def register_routers(app: FastAPI, prefix: str = "/api"):
     app.include_router(api_router, prefix=prefix)
 
     import os
+    from fastapi.responses import FileResponse
+
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+
+    @app.get("/uploads/{file_path:path}")
+    async def serve_upload(file_path: str):
+        full_path = os.path.join(settings.UPLOAD_DIR, file_path)
+        if os.path.isfile(full_path):
+            return FileResponse(full_path)
+        return JSONResponse(content={"code": 404, "msg": "File not found"}, status_code=404)
 
 
 async def init_superuser():

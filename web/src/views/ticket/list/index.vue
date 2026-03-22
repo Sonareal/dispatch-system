@@ -70,6 +70,7 @@ const detailTab = ref('info')
 const msgContent = ref('')
 const msgSending = ref(false)
 const ticketMessages = ref([])
+const voiceUploading = ref(false)
 
 // Assign modal
 const showAssignModal = ref(false)
@@ -186,6 +187,24 @@ async function sendMsg() {
   } catch (e) {
     window.$message?.error(t('views.ticket.message_send_failed'))
   } finally { msgSending.value = false }
+}
+
+function handleVoiceUpload({ file }) {
+  if (!detailData.value) return false
+  voiceUploading.value = true
+  const formData = new FormData()
+  formData.append('file', file.file)
+  formData.append('ticket_id', detailData.value.id)
+  formData.append('receiver_id', detailData.value.assignee_id || detailData.value.submitter_id || '')
+  api.uploadVoiceMessage(formData).then(() => {
+    loadMessages(detailData.value.id)
+    window.$message?.success(t('views.ticket.voice_upload_success'))
+  }).catch(() => {
+    window.$message?.error(t('views.ticket.voice_upload_failed'))
+  }).finally(() => {
+    voiceUploading.value = false
+  })
+  return false // prevent default upload behavior
 }
 
 // ========== Assign / Audit actions ==========
@@ -586,17 +605,45 @@ const validateForm = computed(() => ({
                   <span>{{ msg.created_at }}</span>
                 </div>
                 <div style="margin-top: 4px;">
-                  <NTag v-if="msg.msg_type !== 'text'" size="tiny" style="margin-right: 4px;">{{ msg.msg_type }}</NTag>
-                  {{ msg.content || msg.file_url || '' }}
+                  <!-- Voice message -->
+                  <template v-if="msg.msg_type === 'voice'">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <NTag size="tiny" type="info">{{ t('views.ticket.label_voice_message') }}</NTag>
+                      <audio controls preload="metadata" style="height: 32px; max-width: 260px;">
+                        <source :src="msg.file_url" />
+                      </audio>
+                      <span v-if="msg.voice_duration" style="font-size: 12px; color: #999;">{{ msg.voice_duration }}s</span>
+                    </div>
+                  </template>
+                  <!-- Image message -->
+                  <template v-else-if="msg.msg_type === 'image'">
+                    <NTag size="tiny" type="warning" style="margin-right: 4px;">{{ t('views.ticket.label_image_message') }}</NTag>
+                    <a :href="msg.file_url" target="_blank"><img :src="msg.file_url" style="max-width: 240px; max-height: 180px; border-radius: 4px; margin-top: 4px; cursor: pointer; display: block;" /></a>
+                  </template>
+                  <!-- Text / system / other -->
+                  <template v-else>
+                    <NTag v-if="msg.msg_type !== 'text'" size="tiny" style="margin-right: 4px;">{{ msg.msg_type }}</NTag>
+                    {{ msg.content || msg.file_url || '' }}
+                  </template>
                 </div>
               </div>
               <div v-if="!ticketMessages.length" style="text-align:center;padding:20px;color:#999">{{ t('views.ticket.no_messages') }}</div>
             </div>
             <NDivider style="margin: 8px 0" />
-            <NSpace>
-              <NInput v-model:value="msgContent" :placeholder="t('views.ticket.placeholder_message')" style="width: 500px;"
+            <NSpace align="center">
+              <NInput v-model:value="msgContent" :placeholder="t('views.ticket.placeholder_message')" style="width: 440px;"
                 @keypress.enter="sendMsg" />
               <NButton type="primary" :loading="msgSending" @click="sendMsg">{{ t('views.ticket.action_send') }}</NButton>
+              <NUpload
+                :show-file-list="false"
+                accept=".mp3,.wav,.amr,.m4a,audio/*"
+                :custom-request="handleVoiceUpload"
+              >
+                <NButton :loading="voiceUploading" type="info" secondary>
+                  <template #icon><TheIcon icon="mdi:microphone" :size="16" /></template>
+                  {{ t('views.ticket.action_send_voice') }}
+                </NButton>
+              </NUpload>
             </NSpace>
           </NTabPane>
         </NTabs>

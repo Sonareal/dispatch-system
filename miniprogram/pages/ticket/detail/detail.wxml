@@ -128,6 +128,20 @@
       </view>
     </view>
 
+    <!-- Voice Call Button - shown when ticket has assignee and is in active status -->
+    <view class="detail-card call-card" wx:if="{{ticket.assignee_id && (ticket.status === 'assigned' || ticket.status === 'processing' || ticket.status === 'transferred')}}">
+      <view class="call-row">
+        <view class="call-info">
+          <text class="call-title">语音通话</text>
+          <text class="call-desc">与{{ticket.assignee_id === currentUserId ? ticket.submitter_name : ticket.assignee_name}}实时语音沟通</text>
+        </view>
+        <view class="call-btn" bindtap="initiateCall">
+          <text class="call-btn-icon">C</text>
+          <text class="call-btn-text">拨打</text>
+        </view>
+      </view>
+    </view>
+
     <!-- Messages -->
     <view class="detail-card">
       <view class="card-title">沟通记录</view>
@@ -139,7 +153,18 @@
           </view>
           <view class="msg-body">
             <text wx:if="{{item.msg_type === 'text'}}">{{item.content}}</text>
-            <text wx:elif="{{item.msg_type === 'voice'}}">[语音消息]</text>
+            <view wx:elif="{{item.msg_type === 'voice'}}" class="voice-msg" bindtap="onPlayVoice" data-id="{{item.id}}" data-url="{{item.file_url}}">
+              <view class="voice-play-btn">
+                <text wx:if="{{playingMsgId === item.id}}">&#9632;</text>
+                <text wx:else>&#9654;</text>
+              </view>
+              <view class="voice-bars {{playingMsgId === item.id ? 'voice-bars-active' : ''}}">
+                <view class="voice-bar"></view>
+                <view class="voice-bar"></view>
+                <view class="voice-bar"></view>
+              </view>
+              <text class="voice-duration">{{item.duration ? item.duration + "''" : ''}}</text>
+            </view>
             <text wx:elif="{{item.msg_type === 'image'}}">[图片消息]</text>
             <text wx:elif="{{item.msg_type === 'system'}}" style="color:#999;">{{item.content}}</text>
             <text wx:else>{{item.content || item.file_url}}</text>
@@ -148,9 +173,37 @@
       </view>
       <view wx:else style="text-align:center;padding:20rpx;color:#999;">暂无沟通记录</view>
 
+      <!-- Recording Overlay -->
+      <view wx:if="{{isRecording}}" class="recording-overlay">
+        <view class="recording-indicator">
+          <view class="recording-dot"></view>
+          <text class="recording-text">录音中 {{recordingDuration}}s</text>
+          <text class="recording-hint">松开手指发送，上滑取消</text>
+        </view>
+      </view>
+
+      <!-- Input Mode Toggle + Input Bar -->
       <view class="msg-input-bar">
-        <input class="msg-input" placeholder="输入消息..." value="{{msgContent}}" bindinput="onMsgInput" confirm-type="send" bindconfirm="sendMessage" />
-        <view class="btn btn-primary btn-sm" style="width:120rpx;margin-left:16rpx;" bindtap="sendMessage">发送</view>
+        <!-- Toggle button: switch between text and voice mode -->
+        <view class="input-mode-toggle" bindtap="toggleInputMode">
+          <text class="toggle-icon">{{inputMode === 'voice' ? '键盘' : '语音'}}</text>
+        </view>
+
+        <!-- Text input mode -->
+        <block wx:if="{{inputMode === 'text'}}">
+          <input class="msg-input" placeholder="输入消息..." value="{{msgContent}}" bindinput="onMsgInput" confirm-type="send" bindconfirm="sendMessage" />
+          <view class="send-btn" bindtap="sendMessage">发送</view>
+        </block>
+
+        <!-- Voice input mode -->
+        <block wx:else>
+          <view class="voice-hold-btn {{isRecording ? 'voice-hold-active' : ''}}"
+            bindtouchstart="onVoiceBtnTouchStart"
+            bindtouchend="onVoiceBtnTouchEnd"
+            bindtouchcancel="onVoiceBtnTouchEnd">
+            <text>{{isRecording ? '松开发送' : '按住说话'}}</text>
+          </view>
+        </block>
       </view>
     </view>
 
@@ -158,50 +211,50 @@
     <view class="action-bar safe-bottom" wx:if="{{!loading}}">
       <!-- Draft -->
       <block wx:if="{{ticket.status === 'draft'}}">
-        <view class="btn btn-primary btn-action" style="flex:1;" bindtap="handleSubmitTicket">提交审核</view>
+        <view class="btn btn-primary" style="flex:1;" bindtap="handleSubmitTicket">提交审核</view>
       </block>
 
       <!-- Pending Review -->
       <block wx:elif="{{ticket.status === 'pending_review'}}">
-        <view class="btn btn-default btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleWithdraw">撤回</view>
-        <view class="btn btn-danger btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleAuditReject">驳回</view>
-        <view class="btn btn-success btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleAuditApprove">通过</view>
-        <view class="btn btn-primary btn-action" style="flex:1;" bindtap="handleAssign">指派</view>
+        <view class="btn btn-default" style="flex:1; margin-right:16rpx;" bindtap="handleWithdraw">撤回</view>
+        <view class="btn btn-danger" style="flex:1; margin-right:16rpx;" bindtap="handleAuditReject">驳回</view>
+        <view class="btn btn-success" style="flex:1; margin-right:16rpx;" bindtap="handleAuditApprove">通过</view>
+        <view class="btn btn-primary" style="flex:1;" bindtap="handleAssign">指派</view>
       </block>
 
       <!-- Rejected: re-edit and resubmit -->
       <block wx:elif="{{ticket.status === 'rejected'}}">
-        <view class="btn btn-primary btn-action" style="flex:1;" bindtap="handleSubmitTicket">重新提交审核</view>
+        <view class="btn btn-primary" style="flex:1;" bindtap="handleSubmitTicket">重新提交审核</view>
       </block>
 
       <!-- Approved: assign -->
       <block wx:elif="{{ticket.status === 'approved' || ticket.status === 'pending_assign'}}">
-        <view class="btn btn-primary btn-action" style="flex:1;" bindtap="handleAssign">指派</view>
+        <view class="btn btn-primary" style="flex:1;" bindtap="handleAssign">指派</view>
       </block>
 
       <!-- Assigned: start / transfer / re-assign -->
       <block wx:elif="{{ticket.status === 'assigned'}}">
-        <view class="btn btn-primary btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
-        <view class="btn btn-outline btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
-        <view class="btn btn-warning btn-action" style="flex:1;" bindtap="handleAssign">重新指派</view>
+        <view class="btn btn-primary" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
+        <view class="btn btn-outline" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
+        <view class="btn btn-warning" style="flex:1;" bindtap="handleAssign">重新指派</view>
       </block>
 
       <!-- Processing -->
       <block wx:elif="{{ticket.status === 'processing'}}">
-        <view class="btn btn-outline btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
-        <view class="btn btn-success btn-action" style="flex:1;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
+        <view class="btn btn-outline" style="flex:1; margin-right:16rpx;" bindtap="handleTransfer">转派</view>
+        <view class="btn btn-success" style="flex:1;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
       </block>
 
       <!-- Transferred: re-transfer / process / complete -->
       <block wx:elif="{{ticket.status === 'transferred'}}">
-        <view class="btn btn-primary btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
-        <view class="btn btn-success btn-action" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
-        <view class="btn btn-outline btn-action" style="flex:1;" bindtap="handleTransfer">再次转派</view>
+        <view class="btn btn-primary" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="processing">开始处理</view>
+        <view class="btn btn-success" style="flex:1; margin-right:16rpx;" bindtap="handleUpdateStatus" data-status="completed">完成</view>
+        <view class="btn btn-outline" style="flex:1;" bindtap="handleTransfer">再次转派</view>
       </block>
 
       <!-- Completed: admin can revert -->
       <block wx:elif="{{ticket.status === 'completed'}}">
-        <view class="btn btn-warning btn-action" style="flex:1;" bindtap="handleRevertToReview">打回重审</view>
+        <view class="btn btn-warning" style="flex:1;" bindtap="handleRevertToReview">打回重审</view>
       </block>
     </view>
   </block>
@@ -253,8 +306,8 @@
     </view>
 
     <view class="modal-actions">
-      <view class="btn btn-default btn-sm" style="flex:1; margin-right:20rpx;" bindtap="closeRemarkModal">取消</view>
-      <view class="btn btn-primary btn-sm" style="flex:1;" bindtap="confirmAction">确认</view>
+      <view class="btn btn-default" style="flex:1; margin-right:20rpx;" bindtap="closeRemarkModal">取消</view>
+      <view class="btn btn-primary" style="flex:1;" bindtap="confirmAction">确认</view>
     </view>
   </view>
 </view>

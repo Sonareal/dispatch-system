@@ -5,7 +5,8 @@
     "pages/ticket/create/create",
     "pages/ticket/detail/detail",
     "pages/mine/mine",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/call/call"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1976d2",

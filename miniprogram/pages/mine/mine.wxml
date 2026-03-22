@@ -156,7 +156,7 @@
 
   <!-- Logout Button -->
   <view class="logout-section">
-    <view class="logout-btn" bindtap="handleLogout">
+    <view class="btn btn-block logout-btn" bindtap="handleLogout">
       退出登录
     </view>
   </view>

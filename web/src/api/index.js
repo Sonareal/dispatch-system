@@ -96,6 +96,7 @@ export default {
   getUnreadCount: () => request.get('/message/unread_count'),
   pushNotification: (data = {}) => request.post('/message/push', data),
   getMyNotifications: (params = {}) => request.get('/message/my_notifications', { params }),
+  uploadVoiceMessage: (data) => request.post('/message/upload_voice', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
 
   // === Calls ===
   initiateCall: (data = {}) => request.post('/message/call/initiate', data),

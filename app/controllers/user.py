@@ -35,10 +35,10 @@ class UserController(CRUDBase[User, UserCreate, UserUpdate]):
     async def authenticate(self, credentials: CredentialsSchema) -> Optional["User"]:
         user = await self.model.filter(username=credentials.username).first()
         if not user:
-            raise HTTPException(status_code=400, detail="无效的用户名")
+            raise HTTPException(status_code=400, detail="用户名或密码错误")
         verified = verify_password(credentials.password, user.password)
         if not verified:
-            raise HTTPException(status_code=400, detail="密码错误!")
+            raise HTTPException(status_code=400, detail="用户名或密码错误")
         if not user.is_active:
             raise HTTPException(status_code=400, detail="用户已被禁用")
         return user

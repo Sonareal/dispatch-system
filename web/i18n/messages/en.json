@@ -183,7 +183,12 @@
       "placeholder_city": "Select city",
       "placeholder_region": "Select region",
       "placeholder_salesman": "Salesman",
-      "placeholder_inspection_fee": "Inspection fee"
+      "placeholder_inspection_fee": "Inspection fee",
+      "label_voice_message": "Voice",
+      "label_image_message": "Image",
+      "action_send_voice": "Send Voice",
+      "voice_upload_success": "Voice message sent",
+      "voice_upload_failed": "Failed to send voice message"
     },
     "audit": {
       "label_pending_review_list": "Pending Review",
