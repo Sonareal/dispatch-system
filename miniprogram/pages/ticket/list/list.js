@@ -5,9 +5,10 @@ Page({
   data: {
     tabs: [
       { key: '', label: '全部' },
+      { key: 'draft', label: '草稿' },
       { key: 'pending_review', label: '待审核' },
+      { key: 'assigned', label: '已指派' },
       { key: 'processing', label: '处理中' },
-      { key: 'inspecting', label: '验车中' },
       { key: 'completed', label: '已完成' },
       { key: 'rejected', label: '已驳回' }
     ],

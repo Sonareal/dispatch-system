@@ -28,6 +28,9 @@ Page({
     // Voice playback state
     playingMsgId: null,
     playingCurrentTime: 0,
+    playingTimeText: '0:00',
+    playingProgress: 0,
+    playingDuration: 0,
   },
 
   onLoad(options) {
@@ -51,13 +54,13 @@ Page({
   },
 
   onUnload() {
-    // Cleanup on page unload
-    if (this._recorderManager) {
-      this._recorderManager.stop()
+    // Cleanup on page unload - only stop if actually recording
+    if (this._recorderManager && this.data.isRecording) {
+      try { this._recorderManager.stop() } catch (e) { /* ignore */ }
     }
     if (this._audioContext) {
-      this._audioContext.stop()
-      this._audioContext.destroy()
+      try { this._audioContext.stop() } catch (e) { /* ignore */ }
+      try { this._audioContext.destroy() } catch (e) { /* ignore */ }
     }
     if (this._recordingTimer) {
       clearInterval(this._recordingTimer)
@@ -101,6 +104,11 @@ Page({
     })
 
     recorderManager.onError((err) => {
+      // Ignore harmless "not start" error (triggered by stop() when not recording)
+      if (err && err.errMsg && err.errMsg.indexOf('not start') !== -1) {
+        console.log('Recorder: ignored not-start error')
+        return
+      }
       console.error('Recorder error:', err)
       this._recordingLock = false
       this.setData({ isRecording: false, recordingDuration: 0 })
@@ -118,21 +126,39 @@ Page({
     const audioContext = wx.createInnerAudioContext()
 
     audioContext.onEnded(() => {
-      this.setData({ playingMsgId: null, playingCurrentTime: 0 })
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingTimeText: '0:00' })
     })
 
     audioContext.onError((err) => {
       console.error('Audio playback error:', err)
-      this.setData({ playingMsgId: null, playingCurrentTime: 0 })
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingTimeText: '0:00' })
       wx.showToast({ title: '播放失败', icon: 'none' })
     })
 
     audioContext.onTimeUpdate(() => {
-      this.setData({ playingCurrentTime: Math.floor(audioContext.currentTime) })
+      const cur = audioContext.currentTime || 0
+      // Use audio's own duration (most accurate), fallback to stored duration
+      const audioDur = audioContext.duration
+      const dur = (audioDur && audioDur > 0 && isFinite(audioDur)) ? audioDur : (this.data.playingDuration || 0)
+      const sec = Math.floor(cur)
+      const m = Math.floor(sec / 60)
+      const s = sec % 60
+      const progress = dur > 0 ? Math.min(100, Math.round(cur / dur * 100)) : 0
+
+      // Also update total duration text if we now know it
+      const updates = {
+        playingCurrentTime: sec,
+        playingTimeText: m + ':' + (s < 10 ? '0' : '') + s,
+        playingProgress: progress,
+      }
+      if (dur > 0 && !this.data.playingDuration) {
+        updates.playingDuration = Math.floor(dur)
+      }
+      this.setData(updates)
     })
 
     audioContext.onStop(() => {
-      this.setData({ playingMsgId: null, playingCurrentTime: 0 })
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingTimeText: '0:00' })
     })
 
     this._audioContext = audioContext
@@ -179,11 +205,7 @@ Page({
   onVoiceBtnTouchStart() {
     if (this.data.isRecording || this._recordingLock) return
     this._recordingLock = true
-    // Stop any previous recording first
-    try { this._recorderManager.stop() } catch (e) { /* ignore */ }
-    setTimeout(() => {
-      this._startRecording()
-    }, 100)
+    this._startRecording()
   },
 
   _startRecording() {
@@ -261,13 +283,17 @@ Page({
 
     // If tapping the currently playing message, stop it
     if (this.data.playingMsgId === msgId) {
-      this._audioContext.stop()
-      this.setData({ playingMsgId: null, playingCurrentTime: 0 })
+      try { this._audioContext.stop() } catch (err) { /* ignore */ }
+      this.setData({ playingMsgId: null, playingCurrentTime: 0, playingProgress: 0, playingTimeText: '0:00' })
       return
     }
 
-    // Stop any current playback
-    this._audioContext.stop()
+    // Destroy old context and create fresh one to avoid "audioInstance is not set"
+    if (this._audioContext) {
+      try { this._audioContext.stop() } catch (err) { /* ignore */ }
+      try { this._audioContext.destroy() } catch (err) { /* ignore */ }
+    }
+    this._initAudioPlayer()
 
     // Build full URL from file_url
     let fullUrl = fileUrl
@@ -275,7 +301,11 @@ Page({
       fullUrl = SERVER_BASE + fileUrl
     }
 
-    this.setData({ playingMsgId: msgId, playingCurrentTime: 0 })
+    // Find duration from messages
+    const msg = this.data.messages.find(m => m.id === msgId)
+    const dur = (msg && msg.voice_duration) || 0
+
+    this.setData({ playingMsgId: msgId, playingCurrentTime: 0, playingProgress: 0, playingTimeText: '0:00', playingDuration: dur })
     this._audioContext.src = fullUrl
     this._audioContext.play()
   },
@@ -314,10 +344,21 @@ Page({
     }
   },
 
+  _formatDurationText(sec) {
+    if (!sec || sec <= 0) return ''
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    return m + ':' + (s < 10 ? '0' : '') + s
+  },
+
   async fetchMessages() {
     try {
       const res = await get('/message/ticket_messages', { ticket_id: this.data.id }, { showLoading: false })
-      this.setData({ messages: res.data || [] })
+      const messages = (res.data || []).map(msg => ({
+        ...msg,
+        durationText: msg.voice_duration ? this._formatDurationText(msg.voice_duration) : '',
+      }))
+      this.setData({ messages })
     } catch (e) {
       console.error('Failed to fetch messages:', e)
     }

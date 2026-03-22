@@ -164,6 +164,13 @@ async function viewDetail(ticketId) {
   loadMessages(ticketId)
 }
 
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  // Relative URL - use current origin
+  return window.location.origin + url
+}
+
 async function loadMessages(ticketId) {
   try {
     const res = await api.getTicketMessages({ ticket_id: ticketId })
@@ -609,8 +616,8 @@ const validateForm = computed(() => ({
                   <template v-if="msg.msg_type === 'voice'">
                     <div style="display: flex; align-items: center; gap: 8px;">
                       <NTag size="tiny" type="info">{{ t('views.ticket.label_voice_message') }}</NTag>
-                      <audio controls preload="metadata" style="height: 32px; max-width: 260px;">
-                        <source :src="msg.file_url" />
+                      <audio controls preload="metadata" style="height: 36px; max-width: 280px;">
+                        <source :src="getFileUrl(msg.file_url)" type="audio/mpeg" />
                       </audio>
                       <span v-if="msg.voice_duration" style="font-size: 12px; color: #999;">{{ msg.voice_duration }}s</span>
                     </div>
@@ -618,7 +625,7 @@ const validateForm = computed(() => ({
                   <!-- Image message -->
                   <template v-else-if="msg.msg_type === 'image'">
                     <NTag size="tiny" type="warning" style="margin-right: 4px;">{{ t('views.ticket.label_image_message') }}</NTag>
-                    <a :href="msg.file_url" target="_blank"><img :src="msg.file_url" style="max-width: 240px; max-height: 180px; border-radius: 4px; margin-top: 4px; cursor: pointer; display: block;" /></a>
+                    <a :href="getFileUrl(msg.file_url)" target="_blank"><img :src="getFileUrl(msg.file_url)" style="max-width: 240px; max-height: 180px; border-radius: 4px; margin-top: 4px; cursor: pointer; display: block;" /></a>
                   </template>
                   <!-- Text / system / other -->
                   <template v-else>
