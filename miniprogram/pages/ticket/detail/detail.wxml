@@ -136,7 +136,7 @@
           <text class="call-desc">与{{ticket.assignee_id === currentUserId ? ticket.submitter_name : ticket.assignee_name}}实时语音沟通</text>
         </view>
         <view class="call-btn" bindtap="initiateCall">
-          <text class="call-btn-icon">C</text>
+          <text class="call-btn-icon">{{"☎"}}</text>
           <text class="call-btn-text">拨打</text>
         </view>
       </view>
@@ -177,7 +177,7 @@
                 </view>
               </view>
             </view>
-            <text wx:elif="{{item.msg_type === 'image'}}">[图片消息]</text>
+            <image wx:elif="{{item.msg_type === 'image'}}" class="msg-image" src="{{item.fullImageUrl}}" mode="widthFix" bindtap="onPreviewImage" data-url="{{item.fullImageUrl}}" />
             <text wx:elif="{{item.msg_type === 'system'}}" style="color:#999;">{{item.content}}</text>
             <text wx:else>{{item.content || item.file_url}}</text>
           </view>
@@ -196,7 +196,6 @@
 
       <!-- Input Mode Toggle + Input Bar -->
       <view class="msg-input-bar">
-        <!-- Toggle button: switch between text and voice mode -->
         <view class="input-mode-toggle" bindtap="toggleInputMode">
           <text class="toggle-icon">{{inputMode === 'voice' ? '键盘' : '语音'}}</text>
         </view>
@@ -204,6 +203,9 @@
         <!-- Text input mode -->
         <block wx:if="{{inputMode === 'text'}}">
           <input class="msg-input" placeholder="输入消息..." value="{{msgContent}}" bindinput="onMsgInput" confirm-type="send" bindconfirm="sendMessage" />
+          <view class="img-btn" bindtap="onChooseImage">
+            <text class="img-btn-icon">{{"📷"}}</text>
+          </view>
           <view class="send-btn" bindtap="sendMessage">发送</view>
         </block>
 
@@ -214,6 +216,9 @@
             bindtouchend="onVoiceBtnTouchEnd"
             bindtouchcancel="onVoiceBtnTouchEnd">
             <text>{{isRecording ? '松开发送' : '按住说话'}}</text>
+          </view>
+          <view class="img-btn" bindtap="onChooseImage">
+            <text class="img-btn-icon">{{"📷"}}</text>
           </view>
         </block>
       </view>

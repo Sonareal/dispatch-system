@@ -368,10 +368,76 @@ Page({
       const messages = (res.data || []).map(msg => ({
         ...msg,
         durationText: msg.voice_duration ? this._formatDurationText(msg.voice_duration) : '',
+        fullImageUrl: msg.msg_type === 'image' && msg.file_url
+          ? (msg.file_url.startsWith('http') ? msg.file_url : SERVER_BASE + msg.file_url)
+          : '',
       }))
       this.setData({ messages })
     } catch (e) {
       console.error('Failed to fetch messages:', e)
+    }
+  },
+
+  onChooseImage() {
+    const ticket = this.data.ticket
+    if (!ticket) return
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFile = res.tempFiles[0]
+        if (tempFile) {
+          this._uploadImage(tempFile.tempFilePath)
+        }
+      }
+    })
+  },
+
+  _uploadImage(filePath) {
+    const ticket = this.data.ticket
+    if (!ticket) return
+    wx.showLoading({ title: '发送图片中...', mask: true })
+    const token = getToken()
+    const uploadUrl = SERVER_BASE + '/api/v1/message/upload_image'
+
+    wx.uploadFile({
+      url: uploadUrl,
+      filePath: filePath,
+      name: 'file',
+      formData: {
+        ticket_id: String(this.data.id),
+        receiver_id: String(ticket.assignee_id || ticket.submitter_id),
+      },
+      header: { 'token': token },
+      success: (res) => {
+        wx.hideLoading()
+        if (res.statusCode === 200) {
+          let data = res.data
+          if (typeof data === 'string') {
+            try { data = JSON.parse(data) } catch (e) { /* ignore */ }
+          }
+          if (data && (data.code === 0 || data.code === 200)) {
+            wx.showToast({ title: '发送成功', icon: 'success' })
+            this.fetchMessages()
+          } else {
+            wx.showToast({ title: (data && data.msg) || '发送失败', icon: 'none' })
+          }
+        } else {
+          wx.showToast({ title: '上传失败', icon: 'none' })
+        }
+      },
+      fail: () => {
+        wx.hideLoading()
+        wx.showToast({ title: '上传失败', icon: 'none' })
+      }
+    })
+  },
+
+  onPreviewImage(e) {
+    const url = e.currentTarget.dataset.url
+    if (url) {
+      wx.previewImage({ current: url, urls: [url] })
     }
   },
 

@@ -15,6 +15,7 @@ from .roles import roles_router
 from .sysconfig import sysconfig_router
 from .tickets import tickets_router
 from .users import users_router
+from .ocr import ocr_router
 from .ws.signaling import router as ws_router
 
 v1_router = APIRouter()
@@ -32,6 +33,7 @@ v1_router.include_router(tickets_router, prefix="/ticket", dependencies=[DependA
 v1_router.include_router(messages_router, prefix="/message", dependencies=[DependAuth])
 v1_router.include_router(oplog_router, prefix="/oplog", dependencies=[DependPermission])
 v1_router.include_router(sysconfig_router, prefix="/sysconfig", dependencies=[DependPermission])
+v1_router.include_router(ocr_router, prefix="/ocr", dependencies=[DependAuth])
 v1_router.include_router(ws_router, prefix="/ws", tags=["WebSocket"])
 
 # Public site config endpoint (no auth required, for login page etc.)

@@ -40,15 +40,17 @@ Page({
     } = options
 
     const isCaller = mode === 'caller'
-    const displayName = isCaller ? callee_name : caller_name
+    const decodedCalleeName = decodeURIComponent(callee_name || '')
+    const decodedCallerName = decodeURIComponent(caller_name || '')
+    const displayName = isCaller ? decodedCalleeName : decodedCallerName
     const avatarChar = displayName ? displayName.charAt(0) : '?'
 
     this.setData({
       ticketId: ticket_id,
       calleeId: callee_id,
-      calleeName: callee_name,
+      calleeName: decodedCalleeName,
       callId: call_id,
-      callerName: caller_name,
+      callerName: decodedCallerName,
       roomId: room_id,
       mode: mode,
       displayName: displayName,

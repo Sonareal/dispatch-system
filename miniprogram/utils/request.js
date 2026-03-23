@@ -59,17 +59,24 @@ function request(options) {
           }, 1500)
           reject(new Error('Unauthorized'))
         } else if (statusCode === 403) {
-          wx.showToast({ title: '没有权限执行此操作', icon: 'none', duration: 2000 })
-          reject(new Error('Forbidden'))
+          const detail = (res.data && res.data.msg) || url
+          wx.showToast({ title: '无权限: ' + detail, icon: 'none', duration: 3000 })
+          reject(new Error('Forbidden: ' + detail))
         } else if (statusCode === 404) {
-          wx.showToast({ title: '请求的资源不存在', icon: 'none', duration: 2000 })
-          reject(new Error('Not Found'))
+          const detail = (res.data && res.data.msg) || url
+          wx.showToast({ title: '未找到: ' + detail, icon: 'none', duration: 3000 })
+          reject(new Error('Not Found: ' + detail))
+        } else if (statusCode === 422) {
+          const detail = (res.data && res.data.msg) || '参数错误'
+          wx.showToast({ title: detail, icon: 'none', duration: 3000 })
+          reject(new Error('Validation: ' + detail))
         } else if (statusCode >= 500) {
-          wx.showToast({ title: '服务器异常，请稍后重试', icon: 'none', duration: 2000 })
-          reject(new Error('Server Error'))
+          const detail = (res.data && res.data.msg) || url
+          wx.showToast({ title: '服务器错误: ' + detail, icon: 'none', duration: 3000 })
+          reject(new Error('Server Error: ' + detail))
         } else {
-          wx.showToast({ title: '请求失败: ' + statusCode, icon: 'none', duration: 2000 })
-          reject(new Error('Request failed: ' + statusCode))
+          wx.showToast({ title: '请求失败(' + statusCode + '): ' + url, icon: 'none', duration: 3000 })
+          reject(new Error('Request failed: ' + statusCode + ' ' + url))
         }
       },
       fail(err) {

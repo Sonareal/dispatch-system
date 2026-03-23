@@ -16,6 +16,49 @@
   color: #333333;
   padding: 28rpx 0 16rpx 0;
   border-bottom: 1rpx solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ocr-scan-btn {
+  padding: 8rpx 20rpx;
+  background: #e3f2fd;
+  border-radius: 24rpx;
+}
+
+.ocr-scan-text {
+  font-size: 24rpx;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.location-btn {
+  display: inline-flex;
+  margin-left: 16rpx;
+  padding: 4rpx 16rpx;
+  background: #e8f5e9;
+  border-radius: 20rpx;
+}
+
+.location-btn-text {
+  font-size: 22rpx;
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.ocr-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 16rpx 0;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
 }
 
 .form-group {

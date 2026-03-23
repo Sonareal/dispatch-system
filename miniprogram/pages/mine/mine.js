@@ -181,6 +181,10 @@ Page({
     }
   },
 
+  navigateToAdmin() {
+    wx.navigateTo({ url: '/pages/admin/admin' })
+  },
+
   handleLogout() {
     wx.showModal({
       title: '提示',

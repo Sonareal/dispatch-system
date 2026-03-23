@@ -50,6 +50,7 @@ def make_middlewares():
                 "/docs",
                 "/openapi.json",
                 "/uploads",
+                "/api/v1/ocr",
             ],
         ),
     ]

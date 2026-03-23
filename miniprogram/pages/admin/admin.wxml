@@ -1,0 +1,77 @@
+<view class="page-admin">
+  <view wx:if="{{loading}}" style="text-align:center;padding:100rpx;color:#999;">加载中...</view>
+
+  <view wx:else>
+    <!-- User List -->
+    <view class="user-card" wx:for="{{users}}" wx:key="id">
+      <view class="user-main">
+        <view class="user-avatar">
+          <text>{{item.avatarChar}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name-row">
+            <text class="user-name">{{item.alias || item.username}}</text>
+            <text class="user-username" wx:if="{{item.alias}}">({{item.username}})</text>
+            <text wx:if="{{!item.is_active}}" class="tag tag-red" style="margin-left:8rpx;">已禁用</text>
+          </view>
+          <text class="user-detail">角色: {{item.role_text}}</text>
+          <text class="user-detail">区域: {{item.region_text}}</text>
+          <text class="user-detail" wx:if="{{item.phone}}">电话: {{item.phone}}</text>
+        </view>
+      </view>
+      <view class="user-actions">
+        <view class="action-link" bindtap="onEditUser" data-id="{{item.id}}">编辑</view>
+        <view class="action-link {{item.is_active ? 'text-danger' : 'text-success'}}" bindtap="onToggleActive" data-id="{{item.id}}" data-active="{{item.is_active}}">
+          {{item.is_active ? '禁用' : '启用'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Edit Modal -->
+  <view class="modal-mask" wx:if="{{showEditModal}}" bindtap="closeEditModal"></view>
+  <view class="modal-dialog" wx:if="{{showEditModal}}">
+    <view class="modal-title">编辑用户 - {{editUser.alias || editUser.username}}</view>
+
+    <!-- City Selection -->
+    <view class="section-title">所属城市</view>
+    <view class="chip-list">
+      <view
+        wx:for="{{citiesData}}" wx:key="id"
+        class="chip {{selectedCityId === item.id ? 'chip-selected' : ''}}"
+        bindtap="onCitySelect" data-id="{{item.id}}"
+      >
+        {{item.name}}
+      </view>
+    </view>
+
+    <!-- Role Selection -->
+    <view class="section-title">角色分配</view>
+    <view class="chip-list">
+      <view
+        wx:for="{{rolesWithSelected}}" wx:key="id"
+        class="chip {{item.selected ? 'chip-selected' : ''}}"
+        bindtap="onRoleToggle" data-id="{{item.id}}"
+      >
+        {{item.name}}
+      </view>
+    </view>
+
+    <!-- Region Selection -->
+    <view class="section-title" wx:if="{{regionsWithSelected.length > 0}}">负责区域</view>
+    <view class="chip-list" wx:if="{{regionsWithSelected.length > 0}}">
+      <view
+        wx:for="{{regionsWithSelected}}" wx:key="id"
+        class="chip {{item.selected ? 'chip-selected' : ''}}"
+        bindtap="onRegionToggle" data-id="{{item.id}}"
+      >
+        {{item.name}}
+      </view>
+    </view>
+
+    <view class="modal-actions">
+      <view class="btn btn-default" style="flex:1;margin-right:20rpx;" bindtap="closeEditModal">取消</view>
+      <view class="btn btn-primary" style="flex:1;" bindtap="saveUser">保存</view>
+    </view>
+  </view>
+</view>

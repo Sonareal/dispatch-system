@@ -112,3 +112,24 @@ async def set_user_managed_regions(
             await RegionManager.get_or_create(region_id=rid, user_id=user_id)
 
     return Success(msg="区域设置成功")
+
+
+@router.post("/update_roles", summary="更新用户角色")
+async def update_user_roles(
+    user_id: int = Body(..., description="用户ID"),
+    role_ids: List[int] = Body([], description="角色ID列表"),
+):
+    user = await user_controller.get(id=user_id)
+    await user_controller.update_roles(user, role_ids)
+    return Success(msg="角色更新成功")
+
+
+@router.post("/toggle_active", summary="启用/禁用用户")
+async def toggle_user_active(
+    user_id: int = Body(..., description="用户ID"),
+    is_active: bool = Body(..., description="是否启用"),
+):
+    user = await user_controller.get(id=user_id)
+    user.is_active = is_active
+    await user.save()
+    return Success(msg="已启用" if is_active else "已禁用")

@@ -22,7 +22,8 @@ Page({
     cityText: '',
     submitting: false,
     editId: null,
-    isEdit: false
+    isEdit: false,
+    ocrPreview: null,
   },
 
   onLoad(options) {
@@ -71,6 +72,150 @@ Page({
       console.error('Failed to load ticket:', e)
       wx.showToast({ title: '加载失败', icon: 'none' })
     }
+  },
+
+  // ===== OCR 身份证识别 =====
+  onScanIdCard() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['camera', 'album'],
+      success: (res) => {
+        const tempFilePath = res.tempFiles[0].tempFilePath
+        wx.showLoading({ title: '识别中...', mask: true })
+        // Use WeChat OCR plugin or manual parsing
+        this._ocrIdCard(tempFilePath)
+      }
+    })
+  },
+
+  _ocrIdCard(imagePath) {
+    // Try WeChat's built-in OCR API (requires plugin or service)
+    // Fallback: use wx.getImageInfo + upload to server for OCR
+    // For now, use the simple approach: wx chooseImage -> let user confirm
+
+    // Method: Use the image to extract text via backend OCR service
+    const { getToken } = require('../../../utils/auth')
+    const { BASE_URL } = require('../../../utils/request')
+    const SERVER_BASE = BASE_URL.replace(/\/api\/v1\/?$/, '')
+    const token = getToken()
+
+    wx.uploadFile({
+      url: SERVER_BASE + '/api/v1/ocr/id_card',
+      filePath: imagePath,
+      name: 'file',
+      header: { 'token': token },
+      success: (res) => {
+        wx.hideLoading()
+        if (res.statusCode === 200) {
+          let data = res.data
+          if (typeof data === 'string') {
+            try { data = JSON.parse(data) } catch (e) { /* */ }
+          }
+          if (data && (data.code === 0 || data.code === 200) && data.data) {
+            const result = data.data
+            // Auto-fill form fields
+            const updates = {}
+            if (result.name) {
+              updates['form.customer_name'] = result.name
+            }
+            if (result.id_number) {
+              updates['form.id_card'] = result.id_number
+            }
+            // Note: 身份证上的地址通常与实际地址不符，不自动填入地址字段
+            updates.ocrPreview = {
+              name: result.name || '',
+              id: result.id_number || '',
+            }
+            this.setData(updates)
+            wx.showToast({ title: '识别成功', icon: 'success' })
+          } else {
+            wx.showToast({ title: (data && data.msg) || '识别失败，请手动输入', icon: 'none' })
+          }
+        } else if (res.statusCode === 404) {
+          wx.hideLoading()
+          // OCR API not available, use manual fallback
+          this._ocrFallback(imagePath)
+        } else {
+          wx.showToast({ title: '识别失败', icon: 'none' })
+        }
+      },
+      fail: () => {
+        wx.hideLoading()
+        this._ocrFallback(imagePath)
+      }
+    })
+  },
+
+  _ocrFallback(imagePath) {
+    // Fallback: show the image and let user manually input
+    wx.showModal({
+      title: '提示',
+      content: 'OCR服务暂不可用，请查看照片后手动输入身份证信息',
+      confirmText: '查看照片',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          wx.previewImage({ urls: [imagePath] })
+        }
+      }
+    })
+  },
+
+  onClearOcr() {
+    this.setData({ ocrPreview: null })
+  },
+
+  // ===== 位置获取 =====
+  onGetLocation() {
+    // First try chooseLocation (shows map picker)
+    wx.chooseLocation({
+      success: (res) => {
+        if (res.address || res.name) {
+          const fullAddress = (res.address || '') + (res.name || '')
+          this.setData({ 'form.address': fullAddress })
+          wx.showToast({ title: '位置获取成功', icon: 'success' })
+        }
+      },
+      fail: (err) => {
+        console.log('chooseLocation failed:', err)
+        // Fallback: try getLocation for coordinates then reverse geocode
+        this._getLocationFallback()
+      }
+    })
+  },
+
+  _getLocationFallback() {
+    wx.authorize({
+      scope: 'scope.userLocation',
+      success: () => {
+        wx.getLocation({
+          type: 'gcj02',
+          success: (res) => {
+            // Got coordinates, set as address
+            const addr = '经度:' + res.longitude.toFixed(6) + ' 纬度:' + res.latitude.toFixed(6)
+            this.setData({ 'form.address': addr })
+            wx.showToast({ title: '已获取坐标', icon: 'success' })
+          },
+          fail: () => {
+            wx.showToast({ title: '无法获取位置，请手动输入', icon: 'none' })
+          }
+        })
+      },
+      fail: () => {
+        wx.showModal({
+          title: '需要位置权限',
+          content: '获取位置需要允许位置权限',
+          confirmText: '去设置',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) {
+              wx.openSetting()
+            }
+          }
+        })
+      }
+    })
   },
 
   onInputChange(e) {

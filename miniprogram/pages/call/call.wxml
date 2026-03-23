@@ -5,7 +5,6 @@
   <!-- Avatar area -->
   <view class="avatar-section">
     <view class="avatar-wrapper">
-      <!-- Pulse rings for calling/incoming -->
       <view class="pulse-ring pulse-ring-1" wx:if="{{state === 'calling' || state === 'incoming'}}"></view>
       <view class="pulse-ring pulse-ring-2" wx:if="{{state === 'calling' || state === 'incoming'}}"></view>
       <view class="avatar">
@@ -13,20 +12,13 @@
       </view>
     </view>
 
-    <!-- Name -->
     <text class="display-name">{{displayName}}</text>
-
-    <!-- Status text -->
     <text class="status-text">{{statusText}}</text>
-
-    <!-- Timer (connected state) -->
     <text class="timer-text" wx:if="{{state === 'connected'}}">{{durationText}}</text>
-
-    <!-- Duration on ended -->
     <text class="end-duration" wx:if="{{state === 'ended' && endReason}}">{{endReason}}</text>
   </view>
 
-  <!-- Sound wave animation (connected state) -->
+  <!-- Sound wave animation -->
   <view class="sound-waves" wx:if="{{state === 'connected'}}">
     <view class="wave wave-1"></view>
     <view class="wave wave-2"></view>
@@ -37,31 +29,35 @@
 
   <!-- Action buttons -->
   <view class="actions">
-    <!-- Calling state: hangup only -->
+    <!-- Calling: hangup -->
     <view class="btn-row" wx:if="{{state === 'calling'}}">
-      <view class="action-btn btn-hangup" bindtap="hangupCall">
-        <text class="btn-icon-text">X</text>
-        <text class="btn-label">挂断</text>
+      <view class="action-btn" bindtap="hangupCall">
+        <view class="btn-hangup">
+          <text class="btn-text">挂断</text>
+        </view>
       </view>
     </view>
 
-    <!-- Incoming state: reject + accept -->
+    <!-- Incoming: reject + accept -->
     <view class="btn-row btn-row-double" wx:if="{{state === 'incoming'}}">
-      <view class="action-btn btn-reject" bindtap="rejectCall">
-        <text class="btn-icon-text">X</text>
-        <text class="btn-label">拒接</text>
+      <view class="action-btn" bindtap="rejectCall">
+        <view class="btn-reject">
+          <text class="btn-text">拒接</text>
+        </view>
       </view>
-      <view class="action-btn btn-accept" bindtap="acceptCall">
-        <text class="btn-icon-text">C</text>
-        <text class="btn-label">接听</text>
+      <view class="action-btn" bindtap="acceptCall">
+        <view class="btn-accept">
+          <text class="btn-text">接听</text>
+        </view>
       </view>
     </view>
 
-    <!-- Connected state: hangup only -->
+    <!-- Connected: hangup -->
     <view class="btn-row" wx:if="{{state === 'connected'}}">
-      <view class="action-btn btn-hangup" bindtap="hangupCall">
-        <text class="btn-icon-text">X</text>
-        <text class="btn-label">挂断</text>
+      <view class="action-btn" bindtap="hangupCall">
+        <view class="btn-hangup">
+          <text class="btn-text">挂断</text>
+        </view>
       </view>
     </view>
   </view>

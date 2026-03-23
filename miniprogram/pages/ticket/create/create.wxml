@@ -1,6 +1,11 @@
 <view class="page-create">
   <view class="form-section">
-    <view class="section-title">客户信息</view>
+    <view class="section-title">
+      <text>客户信息</text>
+      <view class="ocr-scan-btn" bindtap="onScanIdCard">
+        <text class="ocr-scan-text">{{"📷"}} 拍照识别身份证</text>
+      </view>
+    </view>
 
     <view class="form-group">
       <view class="form-label">
@@ -92,7 +97,7 @@
   </view>
 
   <view class="form-section">
-    <view class="section-title">其他信息</view>
+    <view class="section-title">区域信息</view>
 
     <view class="form-group">
       <view class="form-label">所在城市</view>
@@ -108,14 +113,19 @@
     </view>
 
     <view class="form-group">
-      <view class="form-label">详细地址</view>
+      <view class="form-label">
+        <text>详细地址</text>
+        <view class="location-btn" bindtap="onGetLocation">
+          <text class="location-btn-text">{{"📍"}} 获取位置</text>
+        </view>
+      </view>
       <input
         class="form-input"
         placeholder="请输入详细地址"
         value="{{form.address}}"
         data-field="address"
         bindinput="onInputChange"
-        maxlength="100"
+        maxlength="200"
       />
     </view>
 
@@ -145,6 +155,20 @@
     </view>
   </view>
 
+  <!-- OCR Result Preview -->
+  <view class="form-section" wx:if="{{ocrPreview}}">
+    <view class="section-title">
+      <text>识别结果</text>
+      <view class="ocr-scan-btn" bindtap="onClearOcr">
+        <text class="ocr-scan-text">清除</text>
+      </view>
+    </view>
+    <view class="ocr-result">
+      <text wx:if="{{ocrPreview.name}}">姓名: {{ocrPreview.name}}</text>
+      <text wx:if="{{ocrPreview.id}}">身份证: {{ocrPreview.id}}</text>
+    </view>
+  </view>
+
   <!-- Action Buttons -->
   <view class="form-actions safe-bottom">
     <view class="btn btn-lg btn-default" style="flex: 1; margin-right: 20rpx;" bindtap="handleReset">
@@ -155,7 +179,7 @@
       style="flex: 2;"
       bindtap="handleSubmit"
     >
-      {{submitting ? '提交中...' : '提交工单'}}
+      {{submitting ? '提交中...' : (isEdit ? '更新工单' : '提交工单')}}
     </view>
   </view>
 </view>

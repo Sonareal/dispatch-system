@@ -223,6 +223,26 @@
   padding: 4rpx 8rpx;
 }
 
+.img-btn {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8rpx;
+  flex-shrink: 0;
+}
+
+.img-btn-icon {
+  font-size: 36rpx;
+}
+
+.msg-image {
+  max-width: 400rpx;
+  border-radius: 8rpx;
+  margin-top: 8rpx;
+}
+
 .msg-sender {
   font-size: 24rpx;
   font-weight: 500;
